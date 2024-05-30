@@ -39,8 +39,8 @@ import (
 )
 
 /*
-//go:generate bash ../../get_version.sh
-//go:embed version.txt
+go:generate bash ../../get_version.sh
+go:embed version.txt
 */
 var version string
 
