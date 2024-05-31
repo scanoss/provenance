@@ -40,7 +40,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/scanoss/papi => ../papi
+// replace github.com/scanoss/papi => ../papi
 
 // Details of how to use the "replace" command for local development
 // https://github.com/golang/go/wiki/Modules#when-should-i-use-the-replace-directive
