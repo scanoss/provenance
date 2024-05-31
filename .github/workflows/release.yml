@@ -19,23 +19,6 @@ jobs:
         with:
           go-version: 1.20.x
 
-
-      - name: Build Unpublished papi
-        run: |
-          sudo apt update && sudo apt install -y protobuf-compiler
-          git clone -b SCP118-AddProvenanze https://github.com/scanoss/papi ../papi
-          cd ../papi
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28
-          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
-          go get github.com/grpc-ecosystem/grpc-gateway/v2/internal/descriptor@v2.18.0
-          go install \
-                  github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway \
-                  github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2 \
-                  google.golang.org/protobuf/cmd/protoc-gen-go \
-                  google.golang.org/grpc/cmd/protoc-gen-go-grpc
-          go install github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
-          make build_go
-
       - name: Build
         run: |
           make build_amd
