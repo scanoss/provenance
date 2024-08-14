@@ -33,7 +33,6 @@ import (
 
 	myconfig "scanoss.com/provenance/pkg/config"
 	zlog "scanoss.com/provenance/pkg/logger"
-	m "scanoss.com/provenance/pkg/models"
 	"scanoss.com/provenance/pkg/protocol/grpc"
 	"scanoss.com/provenance/pkg/service"
 )
@@ -137,22 +136,6 @@ func RunServer() error {
 		zlog.S.Errorf("Failed to ping database: %v", err)
 		return fmt.Errorf("failed to ping database: %v", err)
 	}
-
-	m.LDBEncBinPath = cfg.LDB.EncBinPath
-	m.LDBBinPath = cfg.LDB.BinPath
-	m.LDBProvenanceTableName = cfg.LDB.ProvenanceName
-	m.LDBPivotTableName = cfg.LDB.PivotName
-
-	//tables, errLDB := m.PingLDB("oss")
-	_, errLDB := m.PingLDB("oss")
-	if errLDB != nil {
-		zlog.S.Errorf("Failed to ping LDB: %v", errLDB)
-		return fmt.Errorf("failed to ping LDB: %v", errLDB)
-	}
-	/*if !m.ContainsTable(tables, "provenanze") {
-		zlog.S.Error("provenance LDB table not found")
-		return fmt.Errorf("%s", "provenance LDB table not found")
-	}*/
 
 	defer closeDbConnection(db)
 	v2API := service.NewProvenanceServer(db, cfg)

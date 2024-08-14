@@ -29,17 +29,22 @@ type ProvenanceOutput struct {
 }
 
 type ProvenanceOutputItem struct {
-	Purl      string           `json:"purl"`
-	Version   string           `json:"version"`
-	Countries []ProvenanceItem `json:"countries"`
+	Purl              string                   `json:"purl"`
+	DeclaredLocations []DeclaredProvenanceItem `json:"declared_locations"`
+	CuratedLocations  []CuratedProvenanceItem  `json:"curated_locations"`
 }
 
-type ProvenanceItem struct {
+type DeclaredProvenanceItem struct {
+	Type     string `json:"type"`
+	Location string `json:"location"`
+}
+
+type CuratedProvenanceItem struct {
 	Country string `json:"country"`
-	Source  string `json:"source"`
+	Count   int    `json:"count"`
 }
 
-// ExportProvenanceOutput converts the ProvenanceOutput structure to a byte array
+// ExportProvenanceOutput converts the CryptoOutput structure to a byte array
 func ExportProvenanceOutput(output ProvenanceOutput) ([]byte, error) {
 	data, err := json.Marshal(output)
 	if err != nil {
@@ -49,16 +54,16 @@ func ExportProvenanceOutput(output ProvenanceOutput) ([]byte, error) {
 	return data, nil
 }
 
-// ParseProvenanceOutput converts the input byte array to a ProvenanceOutput structure
-func ParseProvenanceOutput(input []byte) (ProvenanceOutput, error) {
+// ParseCryptoOutput converts the input byte array to a CryptoOutput structure
+func ParseCryptoOutput(input []byte) (ProvenanceOutput, error) {
 	if input == nil || len(input) == 0 {
-		return ProvenanceOutput{}, errors.New("no output provenance data supplied to parse")
+		return ProvenanceOutput{}, errors.New("no output Cryptography data supplied to parse")
 	}
 	var data ProvenanceOutput
 	err := json.Unmarshal(input, &data)
 	if err != nil {
 		zlog.S.Errorf("Parse failure: %v", err)
-		return ProvenanceOutput{}, errors.New(fmt.Sprintf("failed to parse provenance output data: %v", err))
+		return ProvenanceOutput{}, errors.New(fmt.Sprintf("failed to parse Cryptography output data: %v", err))
 	}
 	zlog.S.Debugf("Parsed data2: %v", data)
 	return data, nil

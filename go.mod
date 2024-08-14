@@ -17,7 +17,6 @@ require (
 require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.0 // indirect
-	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230822172742-b8732ec3820d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230822172742-b8732ec3820d // indirect
 )
@@ -28,7 +27,6 @@ require (
 	github.com/golobby/cast v1.3.0 // indirect
 	github.com/golobby/dotenv v1.3.1 // indirect
 	github.com/golobby/env/v2 v2.2.0 // indirect
-	github.com/google/uuid v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
@@ -40,7 +38,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/scanoss/papi => ../papi
+replace github.com/scanoss/papi => ../platform2.0/papi
 
 // Details of how to use the "replace" command for local development
 // https://github.com/golang/go/wiki/Modules#when-should-i-use-the-replace-directive

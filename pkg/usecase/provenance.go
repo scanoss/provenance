@@ -19,31 +19,41 @@ package usecase
 import (
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
 	"scanoss.com/provenance/pkg/dtos"
 	zlog "scanoss.com/provenance/pkg/logger"
 	"scanoss.com/provenance/pkg/models"
-	i "scanoss.com/provenance/pkg/models"
-	utils "scanoss.com/provenance/pkg/utils"
+	"scanoss.com/provenance/pkg/utils"
 )
 
 type ProvenanceUseCase struct {
 	ctx     context.Context
 	conn    *sqlx.Conn
 	allUrls *models.AllUrlsModel
-	prov    *models.ContributorProvenanceModel
+}
+type ProvenanceWorkerStruct struct {
+	URLMd5  string
+	Purl    string
+	Version string
+}
+type InternalQuery struct {
+	CompletePurl    string
+	PurlName        string
+	Requirement     string
+	SelectedVersion string
+	SelectedURLS    []models.AllUrl
 }
 
 func NewProvenance(ctx context.Context, conn *sqlx.Conn) *ProvenanceUseCase {
 	return &ProvenanceUseCase{ctx: ctx, conn: conn,
 		allUrls: models.NewAllUrlModel(ctx, conn, models.NewProjectModel(ctx, conn)),
-		prov:    models.NewContributorProvenanceModel(ctx, conn),
 	}
 }
 
-// GetProvenance takes the Provenance Input request, searches for Provenance usages and returns a ProvenanceOutput struct
+// GetCrypto takes the Crypto Input request, searches for Crytporaphic usages and returns a CrytoOutput struct
 func (p ProvenanceUseCase) GetProvenance(request dtos.ProvenanceInput) (dtos.ProvenanceOutput, int, error) {
 
 	notFound := 0
@@ -52,9 +62,9 @@ func (p ProvenanceUseCase) GetProvenance(request dtos.ProvenanceInput) (dtos.Pro
 		return dtos.ProvenanceOutput{}, 0, errors.New("empty list of purls")
 	}
 
-	query := []i.InternalQuery{}
+	query := []InternalQuery{}
 	purlsToQuery := []utils.PurlReq{}
-	justPurlNames := []string{}
+	purls := []string{}
 	//Prepare purls to query
 	for _, purl := range request.Purls {
 
@@ -69,103 +79,60 @@ func (p ProvenanceUseCase) GetProvenance(request dtos.ProvenanceInput) (dtos.Pro
 		purlName, err := utils.PurlNameFromString(purl.Purl) // Make sure we just have the bare minimum for a Purl Name
 		if err == nil {
 			purlsToQuery = append(purlsToQuery, utils.PurlReq{Purl: purlName, Version: purl.Requirement})
-			justPurlNames = append(justPurlNames, purlName)
+			purls = append(purls, purlName)
 		}
-		query = append(query, i.InternalQuery{CompletePurl: purl.Purl, Requirement: purl.Requirement, PurlName: purlName})
+		query = append(query, InternalQuery{CompletePurl: purl.Purl, Requirement: purl.Requirement, PurlName: purlName})
 	}
+	prov := models.NewProvenanceModel(p.ctx, p.conn)
+	countries := models.NewCountryMapModel(p.ctx, p.conn)
 
-	clResults := models.QueryBulkPurlLDB(query)
-
-	url, err := p.allUrls.GetUrlsByPurlList(purlsToQuery)
-	if len(url) == 0 {
-		return dtos.ProvenanceOutput{}, 0, errors.New("Error Processing input")
+	vendors, err := prov.GetProvenanceByPurlNames(purls, "")
+	if err != nil {
+		return dtos.ProvenanceOutput{}, 0, err
 	}
-	zlog.S.Info("\n\nAbout to query contributors\n", justPurlNames)
-	contributorProvs, _ := p.prov.GetContributorsByPurlList(justPurlNames)
-	mapContributors := make(map[string][]string)
-	for _, p := range contributorProvs {
-		mapContributors[p.PurlName] = append(mapContributors[p.PurlName], p.Country)
-	}
+	curatedCountries := prov.ProcessCuratedVendors(vendors)
 
-	purlMap := make(map[string][]models.AllUrl)
+	vendorsMap := make(map[string][]models.Provenance)
 
-	///Order Urls in a map for fast access by purlname
-	for r := range url {
-		purlMap[url[r].PurlName] = append(purlMap[url[r].PurlName], url[r])
+	for _, v := range vendors {
+		vendorsMap[v.PurlName] = append(vendorsMap[v.PurlName], v)
 	}
-	urlHashes := []string{}
-	// For all the requested purls, choose the closest urls that match
-	for r := range query {
-		query[r].SelectedURLS, err = models.PickClosestUrls(purlMap[query[r].PurlName], query[r].PurlName, "", query[r].Requirement)
-		if err != nil {
-			return dtos.ProvenanceOutput{}, 0, err
-		}
-		if len(query[r].SelectedURLS) > 0 {
-			query[r].SelectedVersion = query[r].SelectedURLS[0].Version
-			for h := range query[r].SelectedURLS {
-				urlHashes = append(urlHashes, query[r].SelectedURLS[h].UrlHash)
+	/*
+		 mapProv := make(map[string][]models.ProvenanceItem)
 
-			}
-		} else {
-			// NO URL linked to that purl
-			notFound++
-		}
-	}
-	//Create a map containing the files for each url
-	files, errFiles := models.QueryBulkPivotLDB(urlHashes)
-	if errFiles != nil {
-		return dtos.ProvenanceOutput{}, 0, errFiles
-	}
-	//Create a map containing the Provenance usage for each file
-	prov := models.QueryBulkProvenanceLDB(files)
-
-	mapProv := make(map[string][]models.ProvenanceItem)
-
-	//Remove duplicate algorithms for the same file
-	for k, v := range files {
-		for f := range v {
-			mapProv[k] = append(mapProv[k], prov[v[f]]...)
-		}
-	}
+		 //Remove duplicate algorithms for the same file
+		 for k, v := range files {
+			 for f := range v {
+				 mapProv[k] = append(mapProv[k], prov[v[f]]...)
+			 }
+		 }*/
 	retV := dtos.ProvenanceOutput{}
 
 	//Create the response
-	for r := range query {
+	for k, listOfVendors := range vendorsMap {
 		var provOutItem dtos.ProvenanceOutputItem
-		countries := make(map[string]bool)
-		relatedURLs := query[r].SelectedURLS
-		provOutItem.Version = query[r].SelectedVersion
-		provOutItem.Purl = query[r].CompletePurl
-		for u := range relatedURLs {
 
-			hash := relatedURLs[u].UrlHash
-			items := mapProv[hash]
-			//remove duplicates for the same URL
-			for i := range items {
-				if _, exist := countries[items[i].Country]; !exist {
-					provOutItem.Countries = append(provOutItem.Countries, dtos.ProvenanceItem{Country: items[i].Country, Source: items[i].Source})
-					countries[items[i].Country] = true
-				}
-			}
-		}
-		if clRes, exist := clResults[provOutItem.Purl]; exist {
-			for _, v := range clRes {
-				if v.Country != "" {
-					provOutItem.Countries = append(provOutItem.Countries, dtos.ProvenanceItem{Country: v.Country, Source: "Component Declared"})
-				}
-
+		//provOutItem.Version = query[r].SelectedVersion
+		provOutItem.Purl = k //query[r].CompletePurl
+		for _, vendor := range listOfVendors {
+			if vendor.DeclaredLocation != "" {
+				provOutItem.DeclaredLocations = append(provOutItem.DeclaredLocations, dtos.DeclaredProvenanceItem{Type: vendor.Type, Location: vendor.DeclaredLocation})
 			}
 		}
 
-		pn, _ := utils.PurlNameFromString(provOutItem.Purl)
-		ctrs := mapContributors[pn]
-		for _, ctr := range ctrs {
-			if ctr != "" {
-				provOutItem.Countries = append(provOutItem.Countries, dtos.ProvenanceItem{Country: ctr, Source: "Contributor Declared"})
+		//add curated values
+		for k, v := range curatedCountries[provOutItem.Purl] {
+			i, err := strconv.Atoi(k)
+			if err == nil {
+				countryName, err := countries.GeCountryById(i)
+				if err == nil {
+					provOutItem.CuratedLocations = append(provOutItem.CuratedLocations, dtos.CuratedProvenanceItem{Country: countryName, Count: v})
+				}
 			}
 		}
 
 		retV.Provenance = append(retV.Provenance, provOutItem)
+
 	}
 	return retV, notFound, nil
 }

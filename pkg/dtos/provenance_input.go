@@ -35,7 +35,7 @@ type ProvenanceInputItem struct {
 
 // ParseProvenanceInput converts the input byte array to a ProvenanceInput structure
 func ParseProvenanceInput(input []byte) (ProvenanceInput, error) {
-	fmt.Println(string(input))
+
 	if input == nil || len(input) == 0 {
 		return ProvenanceInput{}, errors.New("no purl info data supplied to parse")
 	}
