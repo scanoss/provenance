@@ -19,7 +19,6 @@ package dtos
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	zlog "scanoss.com/provenance/pkg/logger"
 )
@@ -51,20 +50,5 @@ func ExportProvenanceOutput(output ProvenanceOutput) ([]byte, error) {
 		zlog.S.Errorf("Parse failure: %v", err)
 		return nil, errors.New("failed to produce JSON from provenance output data")
 	}
-	return data, nil
-}
-
-// ParseCryptoOutput converts the input byte array to a CryptoOutput structure
-func ParseCryptoOutput(input []byte) (ProvenanceOutput, error) {
-	if input == nil || len(input) == 0 {
-		return ProvenanceOutput{}, errors.New("no output Cryptography data supplied to parse")
-	}
-	var data ProvenanceOutput
-	err := json.Unmarshal(input, &data)
-	if err != nil {
-		zlog.S.Errorf("Parse failure: %v", err)
-		return ProvenanceOutput{}, errors.New(fmt.Sprintf("failed to parse Cryptography output data: %v", err))
-	}
-	zlog.S.Debugf("Parsed data2: %v", data)
 	return data, nil
 }

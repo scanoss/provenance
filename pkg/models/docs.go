@@ -17,10 +17,7 @@
 // Package models contains all the logic required to interact with the SCANOSS database.
 // It provides data structures to represent the data retrieved from the system.
 // Current models/tables supported are:
-// - Mines
-// - Licenses
+// - contributors_provenance
+// - Countries
 // - Versions
-// - Projects
-// - All URLs
-// - Golang Projects
 package models

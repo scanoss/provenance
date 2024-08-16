@@ -14,7 +14,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// Package main load the Provenanze CLI
+// Package main load the Provenance CLI
 package main
 
 func main() {

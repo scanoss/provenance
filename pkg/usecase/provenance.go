@@ -30,9 +30,8 @@ import (
 )
 
 type ProvenanceUseCase struct {
-	ctx     context.Context
-	conn    *sqlx.Conn
-	allUrls *models.AllUrlsModel
+	ctx  context.Context
+	conn *sqlx.Conn
 }
 type ProvenanceWorkerStruct struct {
 	URLMd5  string
@@ -44,16 +43,13 @@ type InternalQuery struct {
 	PurlName        string
 	Requirement     string
 	SelectedVersion string
-	SelectedURLS    []models.AllUrl
 }
 
 func NewProvenance(ctx context.Context, conn *sqlx.Conn) *ProvenanceUseCase {
-	return &ProvenanceUseCase{ctx: ctx, conn: conn,
-		allUrls: models.NewAllUrlModel(ctx, conn, models.NewProjectModel(ctx, conn)),
-	}
+	return &ProvenanceUseCase{ctx: ctx, conn: conn}
 }
 
-// GetCrypto takes the Crypto Input request, searches for Crytporaphic usages and returns a CrytoOutput struct
+// GetProvenance takes the Provenance Input request, searches for Provenance data and returns a ProvenanceOutput struct
 func (p ProvenanceUseCase) GetProvenance(request dtos.ProvenanceInput) (dtos.ProvenanceOutput, int, error) {
 
 	notFound := 0
@@ -62,8 +58,6 @@ func (p ProvenanceUseCase) GetProvenance(request dtos.ProvenanceInput) (dtos.Pro
 		return dtos.ProvenanceOutput{}, 0, errors.New("empty list of purls")
 	}
 
-	query := []InternalQuery{}
-	purlsToQuery := []utils.PurlReq{}
 	purls := []string{}
 	//Prepare purls to query
 	for _, purl := range request.Purls {
@@ -78,10 +72,11 @@ func (p ProvenanceUseCase) GetProvenance(request dtos.ProvenanceInput) (dtos.Pro
 
 		purlName, err := utils.PurlNameFromString(purl.Purl) // Make sure we just have the bare minimum for a Purl Name
 		if err == nil {
-			purlsToQuery = append(purlsToQuery, utils.PurlReq{Purl: purlName, Version: purl.Requirement})
+			// to avoid SQL Injection
+			purlName = strings.ReplaceAll(purlName, "'", "")
+			purlName = strings.ReplaceAll(purlName, "\"", "")
 			purls = append(purls, purlName)
 		}
-		query = append(query, InternalQuery{CompletePurl: purl.Purl, Requirement: purl.Requirement, PurlName: purlName})
 	}
 	prov := models.NewProvenanceModel(p.ctx, p.conn)
 	countries := models.NewCountryMapModel(p.ctx, p.conn)
@@ -97,23 +92,14 @@ func (p ProvenanceUseCase) GetProvenance(request dtos.ProvenanceInput) (dtos.Pro
 	for _, v := range vendors {
 		vendorsMap[v.PurlName] = append(vendorsMap[v.PurlName], v)
 	}
-	/*
-		 mapProv := make(map[string][]models.ProvenanceItem)
 
-		 //Remove duplicate algorithms for the same file
-		 for k, v := range files {
-			 for f := range v {
-				 mapProv[k] = append(mapProv[k], prov[v[f]]...)
-			 }
-		 }*/
 	retV := dtos.ProvenanceOutput{}
 
 	//Create the response
 	for k, listOfVendors := range vendorsMap {
 		var provOutItem dtos.ProvenanceOutputItem
 
-		//provOutItem.Version = query[r].SelectedVersion
-		provOutItem.Purl = k //query[r].CompletePurl
+		provOutItem.Purl = k
 		for _, vendor := range listOfVendors {
 			if vendor.DeclaredLocation != "" {
 				provOutItem.DeclaredLocations = append(provOutItem.DeclaredLocations, dtos.DeclaredProvenanceItem{Type: vendor.Type, Location: vendor.DeclaredLocation})
@@ -124,7 +110,7 @@ func (p ProvenanceUseCase) GetProvenance(request dtos.ProvenanceInput) (dtos.Pro
 		for k, v := range curatedCountries[provOutItem.Purl] {
 			i, err := strconv.Atoi(k)
 			if err == nil {
-				countryName, err := countries.GeCountryById(i)
+				countryName, err := countries.GetCountryById(i)
 				if err == nil {
 					provOutItem.CuratedLocations = append(provOutItem.CuratedLocations, dtos.CuratedProvenanceItem{Country: countryName, Count: v})
 				}

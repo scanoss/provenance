@@ -21,7 +21,7 @@ INSERT INTO vendor_locations
 VALUES(288334, '2024-04-09', 'Germany', 'Germany', NULL, NULL, NULL, NULL, 1563326);
 INSERT INTO vendor_locations
 (vendor_id, indexed_date, declared_location, parsed_location, curated_countries_ids, curated_date, curated_status_id, curator_id, id)
-VALUES(351225, '2024-04-09', 'Portland, OR', 'United States', NULL, NULL, NULL, NULL, 855571);
+VALUES(351225, '2024-04-09', 'Portland, OR', 'United States', '{{1}}', NULL, NULL, NULL, 855571);
 INSERT INTO vendor_locations
 (vendor_id, indexed_date, declared_location, parsed_location, curated_countries_ids, curated_date, curated_status_id, curator_id, id)
 VALUES(376679, '2024-04-09', 'San Francisco, CA', 'United States', NULL, NULL, NULL, NULL, 2657104);

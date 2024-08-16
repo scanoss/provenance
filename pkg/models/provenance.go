@@ -14,7 +14,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// Handle all interaction with the projects table
+// Handle all interaction with the many tables to get provenance
 
 package models
 
@@ -34,18 +34,18 @@ type provenanceModel struct {
 
 type Provenance struct {
 	Type             string `db:"type"`
-	ComponentVendor  string `db:"vendor"`
 	PurlName         string `db:"purl_name"`
 	VendorName       string `db:"vendor_name"`
 	DeclaredLocation string `db:"declared_location"`
 	CountriesId      string `db:"countries_id"`
 }
 
-// NewProjectModel creates a new instance of the Project Model
+// NewProvenanceModel creates a new instance of a provenance Model
 func NewProvenanceModel(ctx context.Context, conn *sqlx.Conn) *provenanceModel {
 	return &provenanceModel{ctx: ctx, conn: conn}
 }
 
+// ProcessCuratedVendors assigns a list of country name to given set of id's of a set of provenance records
 func (m *provenanceModel) ProcessCuratedVendors(vendors []Provenance) map[string]map[string]int {
 	curatedCountries := make(map[string]map[string]int)
 	for _, v := range vendors {
@@ -63,51 +63,43 @@ func (m *provenanceModel) ProcessCuratedVendors(vendors []Provenance) map[string
 			curatedCountries[v.PurlName][list[0]]++
 		}
 	}
-	//fmt.Println("curated Countries", curatedCountries)
 	return (curatedCountries)
 }
 
-// GetProjectsByPurlName searches the projects' table for details about Purl Name and Type
+// GetProvenanceByPurlName get declared and curated locations for contributors and authors from a list of purlnames
 func (m *provenanceModel) GetProvenanceByPurlNames(purlNames []string, purlType string) ([]Provenance, error) {
 	list := ""
 	list = strings.Join(purlNames, "','")
 	list = "('" + list + "')"
-	//fmt.Println(list)
 	var allSources []Provenance
-	/*err := m.conn.SelectContext(m.ctx, &allSources, "SELECT  distinct gc.purl_name as purl_name, vd.type as type, vd.username as vendor_name , vl.declared_location  as declared_location, "+
-	" (CASE 	WHEN vl.curated_countries_ids IS NULL THEN '' "+
-	"ELSE vl.curated_countries_ids "+
-	"END AS countries_id) as countries_id "+
-	"FROM vendors vd "+
-	"left join github_contributors gc on gc.contributor =vd.username  "+
-	"left join vendor_locations vl on vl.vendor_id = vd.id	"+
-	"WHERE gc.purl_name  in "+list+" and vd.type is not null and vd.mine_id = 5  and vl.declared_location is not null")
-	*/
-
 	query := `
-    SELECT DISTINCT 
-        gc.purl_name AS purl_name, 
-        vd.type AS type, 
-        vd.username AS vendor_name, 
-        vl.declared_location AS declared_location, 
-        CASE 
-            WHEN vl.curated_countries_ids IS NULL THEN '' 
-            ELSE 
-                CASE 
-                    WHEN vl.curated_countries_ids = '{}' THEN ''
-                    ELSE concat(vl.curated_countries_ids)
-                END
-        END AS countries_id
-    FROM vendors vd  
-    LEFT JOIN github_contributors gc ON gc.contributor = vd.username  
-    LEFT JOIN vendor_locations vl ON vl.vendor_id = vd.id
-    WHERE gc.purl_name IN (` + list + `)
-      AND vd.type IS NOT NULL 
-      AND vd.mine_id = 5  
-      AND vl.declared_location IS NOT NULL;`
+		    SELECT DISTINCT
+		        gc.purl_name AS purl_name,
+		        vd.type AS type,
+		        vd.username AS vendor_name,
+		        CASE
+					WHEN vl.declared_location IS NULL THEN ''
+					ELSE
+						vl.declared_location
+				END AS declared_location,
+		        CASE
+		            WHEN vl.curated_countries_ids IS NULL THEN ''
+		            ELSE
+		                CASE
+		                    WHEN vl.curated_countries_ids = '{}' THEN ''
+		                    ELSE concat(vl.curated_countries_ids)
+		                END
+		        END AS countries_id
+		    FROM vendors vd
+		    left JOIN github_contributors gc ON gc.contributor = vd.username
+		    left JOIN vendor_locations vl ON vl.vendor_id = vd.id
+		    WHERE gc.purl_name IN ` + list + `
+		      AND vd.type IS NOT NULL
+		      AND vd.mine_id = 5
+		      AND vl.declared_location IS NOT NULL;`
 	err := m.conn.SelectContext(m.ctx, &allSources, query)
 	if err != nil {
-		zlog.S.Errorf("Error: Failed to query %v, %v: %v", purlNames, purlType, err)
+		zlog.S.Errorf("Error: Failed to query %v: %+v", purlNames, err)
 		return nil, fmt.Errorf("failed to query : %v", err)
 	}
 	return allSources, nil

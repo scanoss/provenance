@@ -95,7 +95,7 @@ func (p provenanceServer) GetComponentProvenance(ctx context.Context, request *c
 
 // closeDbConnection closes the specified database connection
 func closeDbConnection(conn *sqlx.Conn) {
-	zlog.S.Debugf("Closing DB Connection: %v", conn)
+	zlog.S.Debugf("Closing DB Connection: %+v", conn)
 	err := conn.Close()
 	if err != nil {
 		zlog.S.Warnf("Warning: Problem closing database connection: %v", err)

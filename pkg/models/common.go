@@ -22,8 +22,10 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/mattn/go-sqlite3"
 	zlog "scanoss.com/provenance/pkg/logger"
 )
 
@@ -47,8 +49,8 @@ func loadSqlData(db *sqlx.DB, ctx context.Context, conn *sqlx.Conn, filename str
 
 // LoadTestSqlData loads all the required test SQL files
 func LoadTestSqlData(db *sqlx.DB, ctx context.Context, conn *sqlx.Conn) error {
-	files := []string{"../models/tests/mines.sql", "../models/tests/all_urls.sql", "../models/tests/projects.sql", "../models/tests/countries.sql",
-		"../models/tests/licenses.sql", "../models/tests/versions.sql", "../models/tests/golang_projects.sql", "../models/tests/vendor_locations.sql", "../models/tests/vendors.sql", "../models/tests/github_contributors.sql"}
+	files := []string{
+		"../models/tests/countries.sql", "../models/tests/versions.sql", "../models/tests/golang_projects.sql", "../models/tests/vendor_locations.sql", "../models/tests/vendors.sql", "../models/tests/github_contributors.sql"}
 	return loadTestSqlDataFiles(db, ctx, conn, files)
 }
 
@@ -60,7 +62,43 @@ func loadTestSqlDataFiles(db *sqlx.DB, ctx context.Context, conn *sqlx.Conn, fil
 			return err
 		}
 	}
+
 	return nil
+}
+
+func Concat(args ...interface{}) (string, error) {
+	var result string
+	for _, arg := range args {
+		if arg != nil {
+			result += fmt.Sprint(arg)
+		}
+	}
+	return result, nil
+}
+func RegisterConcat(db *sqlx.DB, ctx context.Context) {
+	conn, err := db.Connx(ctx) // Get a connection from the pool
+	if err != nil {
+		log.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	fmt.Printf("La conexion es %+v\n", conn)
+	sqliteConn := conn.Raw(func(driverConn interface{}) error {
+		if sqliteConn, ok := driverConn.(*sqlite3.SQLiteConn); ok {
+			// Registrar la función CONCAT
+			err := sqliteConn.RegisterFunc("CONCAT", Concat, true)
+			if err != nil {
+				return fmt.Errorf("error al registrar la función CONCAT: %w", err)
+			}
+		} else {
+			return fmt.Errorf("No se pudo obtener la conexión subyacente de SQLite")
+		}
+		return nil
+	})
+	if sqliteConn != nil {
+		log.Fatal("Error al registrar la función CONCAT:", err)
+	}
+	_ = sqliteConn
+	CloseConn(conn)
+
 }
 
 // CloseDB closes the specified DB and logs any errors

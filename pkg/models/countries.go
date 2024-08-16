@@ -42,7 +42,7 @@ func NewCountryMapModel(ctx context.Context, conn *sqlx.Conn) *CountriesModel {
 var countryMap map[int]string
 
 // GetMineIdsByPurlType retreives a list of the Purl Type IDs associated with the given Purl Type (string)
-func (m *CountriesModel) GeCountryById(id int) (string, error) {
+func (m *CountriesModel) GetCountryById(id int) (string, error) {
 
 	if countryMap == nil {
 

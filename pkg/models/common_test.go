@@ -17,9 +17,10 @@
 package models
 
 import (
+	"testing"
+
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
-	"testing"
 )
 
 func TestDbLoad(t *testing.T) {
@@ -27,8 +28,8 @@ func TestDbLoad(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer CloseDB(db)
-	err = loadSqlData(db, nil, nil, "./tests/mines.sql")
+
+	err = loadSqlData(db, nil, nil, "./tests/countries.sql")
 	if err != nil {
 		t.Errorf("failed to load SQL test data: %v", err)
 	}
@@ -44,8 +45,5 @@ func TestDbLoad(t *testing.T) {
 	if err == nil {
 		t.Errorf("did not fail to load SQL test data")
 	}
-	err = loadSqlData(db, nil, nil, "./tests/bad_sql.sql")
-	if err == nil {
-		t.Errorf("did not fail to load SQL test data")
-	}
+
 }
