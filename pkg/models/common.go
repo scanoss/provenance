@@ -80,7 +80,7 @@ func RegisterConcat(db *sqlx.DB, ctx context.Context) {
 	if err != nil {
 		log.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	fmt.Printf("La conexion es %+v\n", conn)
+
 	sqliteConn := conn.Raw(func(driverConn interface{}) error {
 		if sqliteConn, ok := driverConn.(*sqlite3.SQLiteConn); ok {
 			// Registrar la función CONCAT

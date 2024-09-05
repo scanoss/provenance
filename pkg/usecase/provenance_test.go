@@ -97,7 +97,8 @@ func TestProvenanceUseCase(t *testing.T) {
 		t.Fatalf("failed to load Config: %v", err)
 	}
 	provUc := NewProvenance(ctx, conn)
-	requestDto, err := dtos.ParseProvenanceInput([]byte(provRequest))
+
+	requestDto, err := dtos.ParseProvenanceInput(s, []byte(provRequest))
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when parsing input json", err)
 	}
@@ -121,7 +122,7 @@ func TestProvenanceUseCase(t *testing.T) {
 	   		}
 	   		`
 
-	requestDto, err = dtos.ParseProvenanceInput([]byte(provBadRequest))
+	requestDto, err = dtos.ParseProvenanceInput(s, []byte(provBadRequest))
 
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when parsing input json", err)

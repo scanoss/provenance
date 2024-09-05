@@ -21,7 +21,7 @@ import (
 	"errors"
 	"fmt"
 
-	zlog "scanoss.com/provenance/pkg/logger"
+	"go.uber.org/zap"
 )
 
 type ProvenanceInput struct {
@@ -34,7 +34,7 @@ type ProvenanceInputItem struct {
 }
 
 // ParseProvenanceInput converts the input byte array to a ProvenanceInput structure
-func ParseProvenanceInput(input []byte) (ProvenanceInput, error) {
+func ParseProvenanceInput(s *zap.SugaredLogger, input []byte) (ProvenanceInput, error) {
 
 	if input == nil || len(input) == 0 {
 		return ProvenanceInput{}, errors.New("no purl info data supplied to parse")
@@ -42,9 +42,9 @@ func ParseProvenanceInput(input []byte) (ProvenanceInput, error) {
 	var data ProvenanceInput
 	err := json.Unmarshal(input, &data)
 	if err != nil {
-		zlog.S.Errorf("Parse failure: %v", err)
+		s.Errorf("Parse failure: %v", err)
 		return ProvenanceInput{}, errors.New(fmt.Sprintf("failed to parse provenance input data: %v", err))
 	}
-	zlog.S.Debugf("Parsed data2: %v", data)
+	s.Debugf("Parsed data2: %v", data)
 	return data, nil
 }

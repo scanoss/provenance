@@ -43,7 +43,7 @@ type CuratedProvenanceItem struct {
 	Count   int    `json:"count"`
 }
 
-// ExportProvenanceOutput converts the CryptoOutput structure to a byte array
+// ExportProvenanceOutput converts the ProvenanceOutput structure to a byte array
 func ExportProvenanceOutput(output ProvenanceOutput) ([]byte, error) {
 	data, err := json.Marshal(output)
 	if err != nil {

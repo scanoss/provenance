@@ -17,9 +17,11 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	common "github.com/scanoss/papi/api/commonv2"
 	"scanoss.com/provenance/pkg/dtos"
 	zlog "scanoss.com/provenance/pkg/logger"
@@ -31,10 +33,13 @@ func TestOutputConvert(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
 	}
 	defer zlog.SyncZap()
+	ctx := context.Background()
+	ctx = ctxzap.ToContext(ctx, zlog.L)
+	s := ctxzap.Extract(ctx).Sugar()
 
 	var outputDto = dtos.ProvenanceOutput{}
 
-	output, err := convertProvenanceOutput(outputDto)
+	output, err := convertProvenanceOutput(s, outputDto)
 	if err != nil {
 		t.Errorf("TestOutputConvert failed: %v", err)
 	}
@@ -48,9 +53,11 @@ func TestInputConvert(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
 	}
 	defer zlog.SyncZap()
-
+	ctx := context.Background()
+	ctx = ctxzap.ToContext(ctx, zlog.L)
+	s := ctxzap.Extract(ctx).Sugar()
 	var provIn = &common.PurlRequest{}
-	input, err := convertProvenanceInput(provIn)
+	input, err := convertProvenanceInput(s, provIn)
 	if err != nil {
 		t.Errorf("TestInputConvert failed: %v", err)
 	}

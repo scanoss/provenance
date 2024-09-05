@@ -24,11 +24,12 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
-	zlog "scanoss.com/provenance/pkg/logger"
+	"go.uber.org/zap"
 )
 
 type provenanceModel struct {
 	ctx  context.Context
+	s    *zap.SugaredLogger
 	conn *sqlx.Conn
 }
 
@@ -99,7 +100,7 @@ func (m *provenanceModel) GetProvenanceByPurlNames(purlNames []string, purlType 
 		      AND vl.declared_location IS NOT NULL;`
 	err := m.conn.SelectContext(m.ctx, &allSources, query)
 	if err != nil {
-		zlog.S.Errorf("Error: Failed to query %v: %+v", purlNames, err)
+		m.s.Errorf("Error: Failed to query %v: %+v", purlNames, err)
 		return nil, fmt.Errorf("failed to query : %v", err)
 	}
 	return allSources, nil

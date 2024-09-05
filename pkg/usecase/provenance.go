@@ -23,14 +23,15 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 	"scanoss.com/provenance/pkg/dtos"
-	zlog "scanoss.com/provenance/pkg/logger"
 	"scanoss.com/provenance/pkg/models"
 	"scanoss.com/provenance/pkg/utils"
 )
 
 type ProvenanceUseCase struct {
 	ctx  context.Context
+	s    *zap.SugaredLogger
 	conn *sqlx.Conn
 }
 type ProvenanceWorkerStruct struct {
@@ -54,7 +55,7 @@ func (p ProvenanceUseCase) GetProvenance(request dtos.ProvenanceInput) (dtos.Pro
 
 	notFound := 0
 	if len(request.Purls) == 0 {
-		zlog.S.Info("Empty List of Purls supplied")
+		p.s.Info("Empty List of Purls supplied")
 		return dtos.ProvenanceOutput{}, 0, errors.New("empty list of purls")
 	}
 

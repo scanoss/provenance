@@ -19,20 +19,19 @@
 package grpc
 
 import (
-	"context"
-	"net"
-	"os"
-	"os/signal"
-
+	"github.com/scanoss/go-grpc-helper/pkg/grpc/otel"
+	gs "github.com/scanoss/go-grpc-helper/pkg/grpc/server"
 	pb "github.com/scanoss/papi/api/provenancev2"
+
+	myconfig "scanoss.com/provenance/pkg/config"
+
 	"google.golang.org/grpc"
-	zlog "scanoss.com/provenance/pkg/logger"
 )
 
 // TODO Add proper service startup/shutdown here
 
 // RunServer runs gRPC service to publish
-func RunServer(ctx context.Context, v2API pb.ProvenanceServer, port string) error {
+/*func RunServer(ctx context.Context, v2API pb.ProvenanceServer, port string) error {
 	listen, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		return err
@@ -54,4 +53,34 @@ func RunServer(ctx context.Context, v2API pb.ProvenanceServer, port string) erro
 	// start gRPC server
 	zlog.S.Info("starting gRPC server...")
 	return server.Serve(listen)
+}
+*/
+// RunServer runs gRPC service to publish.
+func RunServer(config *myconfig.ServerConfig, v2API pb.ProvenanceServer, port string,
+	allowedIPs, deniedIPs []string, startTLS bool, version string) (*grpc.Server, error) {
+	// Start up Open Telemetry is requested
+	var oltpShutdown = func() {}
+	if config.Telemetry.Enabled {
+		var err error
+		oltpShutdown, err = otel.InitTelemetryProviders(config.App.Name, "scanoss-provenance", version,
+			config.Telemetry.OltpExporter, otel.GetTraceSampler(config.App.Mode), false)
+		if err != nil {
+			return nil, err
+		}
+	}
+	// Configure the port, interceptors, TLS and register the service
+	listen, server, err := gs.SetupGrpcServer(port, config.TLS.CertFile, config.TLS.KeyFile,
+		allowedIPs, deniedIPs, startTLS, config.Filtering.BlockByDefault, config.Filtering.TrustProxy,
+		config.Telemetry.Enabled)
+	if err != nil {
+		oltpShutdown()
+		return nil, err
+	}
+	// Register the service API and start the server in the background
+	pb.RegisterProvenanceServer(server, v2API)
+	go func() {
+		gs.StartGrpcServer(listen, server, startTLS)
+		oltpShutdown()
+	}()
+	return server, nil
 }
