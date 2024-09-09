@@ -14,7 +14,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package service
+package models
 
 import (
 	"context"
@@ -22,32 +22,21 @@ import (
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
-	common "github.com/scanoss/papi/api/commonv2"
-	"scanoss.com/provenance/pkg/dtos"
+	"github.com/jmoiron/sqlx"
+
 	zlog "scanoss.com/provenance/pkg/logger"
 )
 
-func TestOutputConvert(t *testing.T) {
-	err := zlog.NewSugaredDevLogger()
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
+func concat(args ...interface{}) (string, error) {
+	var result string
+	for _, arg := range args {
+		if arg != nil {
+			result += fmt.Sprint(arg)
+		}
 	}
-	defer zlog.SyncZap()
-	ctx := context.Background()
-	ctx = ctxzap.ToContext(ctx, zlog.L)
-	s := ctxzap.Extract(ctx).Sugar()
-
-	var outputDto = dtos.ProvenanceOutput{}
-
-	output, err := convertProvenanceOutput(s, outputDto)
-	if err != nil {
-		t.Errorf("TestOutputConvert failed: %v", err)
-	}
-	//assert.NotNilf(t, output, "Output Provenance empty")
-	fmt.Printf("Output: %v\n", output)
+	return result, nil
 }
-
-func TestInputConvert(t *testing.T) {
+func TestContributorProvenance(t *testing.T) {
 	err := zlog.NewSugaredDevLogger()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
@@ -56,10 +45,37 @@ func TestInputConvert(t *testing.T) {
 	ctx := context.Background()
 	ctx = ctxzap.ToContext(ctx, zlog.L)
 	s := ctxzap.Extract(ctx).Sugar()
-	var provIn = &common.PurlRequest{}
-	input, err := convertProvenanceInput(s, provIn)
+	_ = s
+	db, err := sqlx.Connect("sqlite3", ":memory:")
 	if err != nil {
-		t.Errorf("TestInputConvert failed: %v", err)
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	fmt.Printf("Input: %v\n", input)
+	defer CloseDB(db)
+	ctx = ctxzap.ToContext(ctx, zlog.L)
+	RegisterConcat(db, ctx)
+	err = LoadTestSqlData(db, nil, nil)
+
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+
+	conn, err := db.Connx(ctx)
+
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when loading test data", err)
+	}
+
+	//CloseConn(conn)
+	cProvModel := NewProvenanceModel(ctx, conn)
+	purlsNames := []string{"torvalds/uemacs", "scanoss/engine"}
+	list, errq := cProvModel.GetProvenanceByPurlNames(purlsNames, "")
+	if errq != nil {
+		t.Logf("unexpected error on model request  %+v\n", errq)
+	} else {
+		if len(list) == 0 {
+			t.Log("Expected to get at least one result\n")
+		}
+	}
+	t.Logf("%+v", list)
+
 }

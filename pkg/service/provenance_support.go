@@ -23,36 +23,37 @@ import (
 	common "github.com/scanoss/papi/api/commonv2"
 	pb "github.com/scanoss/papi/api/provenancev2"
 	"scanoss.com/provenance/pkg/dtos"
-	zlog "scanoss.com/provenance/pkg/logger"
+
+	"go.uber.org/zap"
 )
 
 // convertPurlRequestInput converts a Purl Request structure into an internal Provenance Input struct
-func convertProvenanceInput(request *common.PurlRequest) (dtos.ProvenanceInput, error) {
+func convertProvenanceInput(s *zap.SugaredLogger, request *common.PurlRequest) (dtos.ProvenanceInput, error) {
 	data, err := json.Marshal(request)
 	if err != nil {
-		zlog.S.Errorf("Problem marshalling Provenance request input: %v", err)
+		s.Errorf("Problem marshalling Provenance request input: %v", err)
 		return dtos.ProvenanceInput{}, errors.New("problem marshalling Provenance input")
 	}
-	dtoRequest, err := dtos.ParseProvenanceInput(data)
+	dtoRequest, err := dtos.ParseProvenanceInput(s, data)
 	if err != nil {
-		zlog.S.Errorf("Problem parsing Provenance request input: %v", err)
+		s.Errorf("Problem parsing Provenance request input: %v", err)
 		return dtos.ProvenanceInput{}, errors.New("problem parsing Provenance input")
 	}
 	return dtoRequest, nil
 }
 
 // convertProvenanceOutput converts an internal Provenance Output structure into a Provenance Response struct
-func convertProvenanceOutput(output dtos.ProvenanceOutput) (*pb.ProvenanceResponse, error) {
+func convertProvenanceOutput(s *zap.SugaredLogger, output dtos.ProvenanceOutput) (*pb.ProvenanceResponse, error) {
 	data, err := json.Marshal(output)
 	if err != nil {
-		zlog.S.Errorf("Problem marshalling Provenance request output: %v", err)
+		s.Errorf("Problem marshalling Provenance request output: %v", err)
 		return &pb.ProvenanceResponse{}, errors.New("problem marshalling Provenance output")
 	}
 	//zlog.S.Debugf("Parsed data: %v", string(data))
 	var depResp pb.ProvenanceResponse
 	err = json.Unmarshal(data, &depResp)
 	if err != nil {
-		zlog.S.Errorf("Problem unmarshalling Provenance request output: %v", err)
+		s.Errorf("Problem unmarshalling Provenance request output: %v", err)
 		return &pb.ProvenanceResponse{}, errors.New("problem unmarshalling Provenance output")
 	}
 	return &depResp, nil

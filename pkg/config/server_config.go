@@ -23,21 +23,27 @@ import (
 
 const (
 	defaultGrpcPort = "50051"
+	defaultRestPort = "40051"
 )
 
 // ServerConfig is configuration for Server
 type ServerConfig struct {
 	App struct {
-		Name  string `env:"APP_NAME"`
-		Port  string `env:"APP_PORT"`
-		Debug bool   `env:"APP_DEBUG"`
-		Mode  string `env:"APP_MODE"` // dev or prod
+		Name     string `env:"APP_NAME"`
+		GRPCPort string `env:"APP_PORT"`
+		RESTPort string `env:"REST_PORT"`
+		Debug    bool   `env:"APP_DEBUG"` // true/false
+		Trace    bool   `env:"APP_TRACE"` // true/false
+		Mode     string `env:"APP_MODE"`  // dev or prod
 	}
-	LDB struct {
-		BinPath        string `env:"LDB_BIN_PATH"`
-		EncBinPath     string `env:"LDB_ENC_BIN_PATH"`
-		ProvenanceName string `env:"LDB_PROVENANCE_TABLE"`
-		PivotName      string `env:"LDB_PIVOT_TABLE"`
+	Logging struct {
+		DynamicLogging bool   `env:"LOG_DYNAMIC"`      // true/false
+		DynamicPort    string `env:"LOG_DYNAMIC_PORT"` // host:port
+		ConfigFile     string `env:"LOG_JSON_CONFIG"`
+	}
+	Telemetry struct {
+		Enabled      bool   `env:"OTEL_ENABLED"`       // true/false
+		OltpExporter string `env:"OTEL_EXPORTER_OLTP"` // OTEL OLTP exporter (default 0.0.0.0:4317)
 	}
 	Database struct {
 		Driver  string `env:"DB_DRIVER"`
@@ -47,6 +53,16 @@ type ServerConfig struct {
 		Schema  string `env:"DB_SCHEMA"`
 		SslMode string `env:"DB_SSL_MODE"` // enable/disable
 		Dsn     string `env:"DB_DSN"`
+	}
+	TLS struct {
+		CertFile string `env:"PROVENANCE_TLS_CERT"` // TLS Certificate
+		KeyFile  string `env:"PROVENANCE_TLS_KEY"`  // Private TLS Key
+	}
+	Filtering struct {
+		AllowListFile  string `env:"PROVENANCE_ALLOW_LIST"`       // Allow list file for incoming connections
+		DenyListFile   string `env:"PROVENANCE_DENY_LIST"`        // Deny list file for incoming connections
+		BlockByDefault bool   `env:"PROVENANCE_BLOCK_BY_DEFAULT"` // Block request by default if they are not in the allow list
+		TrustProxy     bool   `env:"PROVENANCE_TRUST_PROXY"`      // Trust the interim proxy or not (causes the source IP to be validated instead of the proxy)
 	}
 	Components struct {
 		CommitMissing bool `env:"COMP_COMMIT_MISSING"` // Write component details to the DB if they are looked up live
@@ -73,7 +89,8 @@ func NewServerConfig(feeders []config.Feeder) (*ServerConfig, error) {
 // setServerConfigDefaults attempts to set reasonable defaults for the server config
 func setServerConfigDefaults(cfg *ServerConfig) {
 	cfg.App.Name = "SCANOSS Dependency Server"
-	cfg.App.Port = defaultGrpcPort
+	cfg.App.GRPCPort = defaultGrpcPort
+	cfg.App.RESTPort = defaultRestPort
 	cfg.App.Mode = "dev"
 	cfg.App.Debug = false
 	cfg.Database.Driver = "postgres"

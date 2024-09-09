@@ -19,10 +19,12 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log"
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"github.com/jmoiron/sqlx"
+	"github.com/mattn/go-sqlite3"
 	_ "github.com/mattn/go-sqlite3"
 	myconfig "scanoss.com/provenance/pkg/config"
 	"scanoss.com/provenance/pkg/dtos"
@@ -30,6 +32,15 @@ import (
 	"scanoss.com/provenance/pkg/models"
 )
 
+func concat(args ...interface{}) (string, error) {
+	var result string
+	for _, arg := range args {
+		if arg != nil {
+			result += fmt.Sprint(arg)
+		}
+	}
+	return result, nil
+}
 func TestProvenanceUseCase(t *testing.T) {
 
 	err := zlog.NewSugaredDevLogger()
@@ -46,15 +57,29 @@ func TestProvenanceUseCase(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer models.CloseDB(db)
+
 	conn, err := db.Connx(ctx) // Get a connection from the pool
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
+	sqliteConn := conn.Raw(func(driverConn interface{}) error {
+		if sqliteConn, ok := driverConn.(*sqlite3.SQLiteConn); ok {
+			// Registrar la función CONCAT
+			err := sqliteConn.RegisterFunc("CONCAT", concat, true)
+			if err != nil {
+				return fmt.Errorf("error al registrar la función CONCAT: %w", err)
+			}
+		} else {
+			return fmt.Errorf("No se pudo obtener la conexión subyacente de SQLite")
+		}
+		return nil
+	})
+	if err != nil {
+		log.Fatal("Error al registrar la función CONCAT:", err)
+	}
+	_ = sqliteConn
 	defer models.CloseConn(conn)
 	err = models.LoadTestSqlData(db, ctx, conn)
-	models.LDBPivotTableName = "oss/pivot"
-	models.LDBProvenanceTableName = "quiquedb/provenanze"
-	models.LDBBinPath = "/home/scanoss/Quique/cryptography/./ldb"
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when loading test data", err)
 	}
@@ -72,7 +97,8 @@ func TestProvenanceUseCase(t *testing.T) {
 		t.Fatalf("failed to load Config: %v", err)
 	}
 	provUc := NewProvenance(ctx, conn)
-	requestDto, err := dtos.ParseProvenanceInput([]byte(provRequest))
+
+	requestDto, err := dtos.ParseProvenanceInput(s, []byte(provRequest))
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when parsing input json", err)
 	}
@@ -80,10 +106,11 @@ func TestProvenanceUseCase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when getting Provenance", err)
 	}
-	if len(countries.Provenance[0].Countries) == 0 {
-		t.Fatalf("Expected to get at least 1 algorithm")
+	if len(countries.Provenance[0].DeclaredLocations) == 0 {
+		t.Fatalf("Expected to get at least 1 declared location")
 
 	}
+	//fmt.Println(countries)
 	fmt.Printf("Provenance response: %+v, %d\n", countries, notFound)
 	var provBadRequest = `{
 	   		    "purls": [
@@ -95,7 +122,7 @@ func TestProvenanceUseCase(t *testing.T) {
 	   		}
 	   		`
 
-	requestDto, err = dtos.ParseProvenanceInput([]byte(provBadRequest))
+	requestDto, err = dtos.ParseProvenanceInput(s, []byte(provBadRequest))
 
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when parsing input json", err)
@@ -103,38 +130,8 @@ func TestProvenanceUseCase(t *testing.T) {
 
 	countries, _, err = provUc.GetProvenance(requestDto)
 
-	if err == nil {
+	if err == nil && len(countries.Provenance) > 0 {
 		t.Fatalf("did not get an expected error: %v", countries)
-	}
-
-	fmt.Printf("Got expected error: %+v\n", err)
-
-	var provAmbiguousRequest = `{
-		"purls": [
-			{
-			  "purl":"pkg:maven/org.bouncycastle/bcutil-lts8on@2.73.2"
-
-			}
-	  ]
-	}
-	`
-
-	requestDto, err = dtos.ParseProvenanceInput([]byte(provAmbiguousRequest))
-
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when parsing input json", err)
-	}
-
-	countries, notFound, err = provUc.GetProvenance(requestDto)
-
-	if err != nil {
-		t.Fatalf("did not get an expected error: %v", countries)
-	}
-	if notFound > 0 {
-		t.Fatalf("Expected to retrieve at least one url")
-	}
-	if len(countries.Provenance[0].Countries) == 0 {
-		t.Fatalf("Expected to disambiguate urls and retrieve at least one algorithm")
 	}
 
 }

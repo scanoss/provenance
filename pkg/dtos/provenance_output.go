@@ -19,7 +19,6 @@ package dtos
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	zlog "scanoss.com/provenance/pkg/logger"
 )
@@ -29,14 +28,19 @@ type ProvenanceOutput struct {
 }
 
 type ProvenanceOutputItem struct {
-	Purl      string           `json:"purl"`
-	Version   string           `json:"version"`
-	Countries []ProvenanceItem `json:"countries"`
+	Purl              string                   `json:"purl"`
+	DeclaredLocations []DeclaredProvenanceItem `json:"declared_locations"`
+	CuratedLocations  []CuratedProvenanceItem  `json:"curated_locations"`
 }
 
-type ProvenanceItem struct {
+type DeclaredProvenanceItem struct {
+	Type     string `json:"type"`
+	Location string `json:"location"`
+}
+
+type CuratedProvenanceItem struct {
 	Country string `json:"country"`
-	Source  string `json:"source"`
+	Count   int    `json:"count"`
 }
 
 // ExportProvenanceOutput converts the ProvenanceOutput structure to a byte array
@@ -46,20 +50,5 @@ func ExportProvenanceOutput(output ProvenanceOutput) ([]byte, error) {
 		zlog.S.Errorf("Parse failure: %v", err)
 		return nil, errors.New("failed to produce JSON from provenance output data")
 	}
-	return data, nil
-}
-
-// ParseProvenanceOutput converts the input byte array to a ProvenanceOutput structure
-func ParseProvenanceOutput(input []byte) (ProvenanceOutput, error) {
-	if input == nil || len(input) == 0 {
-		return ProvenanceOutput{}, errors.New("no output provenance data supplied to parse")
-	}
-	var data ProvenanceOutput
-	err := json.Unmarshal(input, &data)
-	if err != nil {
-		zlog.S.Errorf("Parse failure: %v", err)
-		return ProvenanceOutput{}, errors.New(fmt.Sprintf("failed to parse provenance output data: %v", err))
-	}
-	zlog.S.Debugf("Parsed data2: %v", data)
 	return data, nil
 }

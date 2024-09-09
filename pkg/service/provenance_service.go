@@ -22,11 +22,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"github.com/jmoiron/sqlx"
 	common "github.com/scanoss/papi/api/commonv2"
 	pb "github.com/scanoss/papi/api/provenancev2"
 	myconfig "scanoss.com/provenance/pkg/config"
-	zlog "scanoss.com/provenance/pkg/logger"
 	"scanoss.com/provenance/pkg/usecase"
 )
 
@@ -43,26 +43,27 @@ func NewProvenanceServer(db *sqlx.DB, config *myconfig.ServerConfig) pb.Provenan
 
 // Echo sends back the same message received
 func (p provenanceServer) Echo(ctx context.Context, request *common.EchoRequest) (*common.EchoResponse, error) {
-	zlog.S.Infof("Received (%v): %v", ctx, request.GetMessage())
+	s := ctxzap.Extract(ctx).Sugar()
+	s.Infof("Received (%v): %v", ctx, request.GetMessage())
 	return &common.EchoResponse{Message: request.GetMessage()}, nil
 }
 
 func (p provenanceServer) GetComponentProvenance(ctx context.Context, request *common.PurlRequest) (*pb.ProvenanceResponse, error) {
-
+	s := ctxzap.Extract(ctx).Sugar()
 	// Make sure we have Provenance data to query
 	reqPurls := request.GetPurls()
 	if reqPurls == nil || len(reqPurls) == 0 {
 		statusResp := common.StatusResponse{Status: common.StatusCode_FAILED, Message: "No purls in request data supplied"}
 		return &pb.ProvenanceResponse{Status: &statusResp}, errors.New("no purl data supplied")
 	}
-	dtoRequest, err := convertProvenanceInput(request) // Convert to internal DTO for processing
+	dtoRequest, err := convertProvenanceInput(s, request) // Convert to internal DTO for processing
 	if err != nil {
 		statusResp := common.StatusResponse{Status: common.StatusCode_FAILED, Message: "Problem parsing Provenance input data"}
 		return &pb.ProvenanceResponse{Status: &statusResp}, errors.New("problem parsing Provenance input data")
 	}
 	conn, err := p.db.Connx(ctx) // Get a connection from the pool
 	if err != nil {
-		zlog.S.Errorf("Failed to get a database connection from the pool: %v", err)
+		s.Errorf("Failed to get a database connection from the pool: %v", err)
 		statusResp := common.StatusResponse{Status: common.StatusCode_FAILED, Message: "Failed to get database pool connection"}
 		return &pb.ProvenanceResponse{Status: &statusResp}, errors.New("problem getting database pool connection")
 	}
@@ -72,14 +73,14 @@ func (p provenanceServer) GetComponentProvenance(ctx context.Context, request *c
 	dtoProv, notFound, err := provUc.GetProvenance(dtoRequest)
 
 	if err != nil {
-		zlog.S.Errorf("Failed to get provenance: %v", err)
+		s.Errorf("Failed to get provenance: %v", err)
 		statusResp := common.StatusResponse{Status: common.StatusCode_FAILED, Message: "Problems encountered extracting Provenance data"}
 		return &pb.ProvenanceResponse{Status: &statusResp}, nil
 	}
 	//zlog.S.Debugf("Parsed Provenance: %+v", dtoProv)
-	provResponse, err := convertProvenanceOutput(dtoProv) // Convert the internal data into a response object
+	provResponse, err := convertProvenanceOutput(s, dtoProv) // Convert the internal data into a response object
 	if err != nil {
-		zlog.S.Errorf("Failed to covnert parsed dependencies: %v", err)
+		s.Errorf("Failed to covnert parsed dependencies: %v", err)
 		statusResp := common.StatusResponse{Status: common.StatusCode_FAILED, Message: "Problems encountered extracting Provenance data"}
 		return &pb.ProvenanceResponse{Status: &statusResp}, nil
 	}
@@ -95,9 +96,10 @@ func (p provenanceServer) GetComponentProvenance(ctx context.Context, request *c
 
 // closeDbConnection closes the specified database connection
 func closeDbConnection(conn *sqlx.Conn) {
-	zlog.S.Debugf("Closing DB Connection: %v", conn)
+
+	//zlog.S.Debugf("Closing DB Connection: %+v", conn)
 	err := conn.Close()
 	if err != nil {
-		zlog.S.Warnf("Warning: Problem closing database connection: %v", err)
+		//	zlog.S.Warnf("Warning: Problem closing database connection: %v", err)
 	}
 }
