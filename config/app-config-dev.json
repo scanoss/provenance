@@ -2,7 +2,9 @@
   "App": {
     "Name": "Provenance Service",
     "Debug": true,
-    "Mode":  "dev"
+    "Mode":  "dev",
+    "RESTPort": "40056",
+    "GRPCPort": "50056"
   },
   "Database": {
     "Driver": "postgres",
