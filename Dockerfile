@@ -18,7 +18,7 @@ WORKDIR /app
  
 COPY --from=build /app/scanoss-provenance /app/scanoss-provenance
 
-EXPOSE 50051
+EXPOSE 50056
 
 ENTRYPOINT ["./scanoss-provenance"]
 #CMD ["--help"]
