@@ -46,37 +46,48 @@ type InternalQuery struct {
 	SelectedVersion string
 }
 
+func existPurl(purls []string, purl string) bool {
+
+	for _, r := range purls {
+		if purl == r {
+			return true
+		}
+	}
+	return false
+}
+
 func NewProvenance(ctx context.Context, conn *sqlx.Conn) *ProvenanceUseCase {
 	return &ProvenanceUseCase{ctx: ctx, conn: conn}
 }
 
 // GetProvenance takes the Provenance Input request, searches for Provenance data and returns a ProvenanceOutput struct
-func (p ProvenanceUseCase) GetProvenance(request dtos.ProvenanceInput) (dtos.ProvenanceOutput, int, error) {
+func (p ProvenanceUseCase) GetProvenance(request dtos.ProvenanceInput) (dtos.ProvenanceOutput, models.QuerySummary, error) {
 
-	notFound := 0
 	if len(request.Purls) == 0 {
 		p.s.Info("Empty List of Purls supplied")
-		return dtos.ProvenanceOutput{}, 0, errors.New("empty list of purls")
+		return dtos.ProvenanceOutput{}, models.QuerySummary{}, errors.New("empty list of purls")
 	}
-
+	summary := models.QuerySummary{}
 	purls := []string{}
 	//Prepare purls to query
 	for _, purl := range request.Purls {
 
-		purlReq := strings.Split(purl.Purl, "@") // Remove any version specific info from the PURL
-		if purlReq[0] == "" {
-			continue
-		}
-		if len(purlReq) > 1 {
-			purl.Requirement = purlReq[1]
-		}
-
+		/*	purlReq := strings.Split(purl.Purl, "@") // Remove any version specific info from the PURL
+				if purlReq[0] == "" {
+					continue
+				}
+			if len(purlReq) > 1 {
+					purl.Requirement = purlReq[1]
+				}
+		*/
 		purlName, err := utils.PurlNameFromString(purl.Purl) // Make sure we just have the bare minimum for a Purl Name
 		if err == nil {
 			// to avoid SQL Injection
 			purlName = strings.ReplaceAll(purlName, "'", "")
 			purlName = strings.ReplaceAll(purlName, "\"", "")
 			purls = append(purls, purlName)
+		} else {
+			summary.PurlsFailedToParse = append(summary.PurlsFailedToParse, purl.Purl)
 		}
 	}
 	prov := models.NewProvenanceModel(p.ctx, p.conn)
@@ -84,23 +95,48 @@ func (p ProvenanceUseCase) GetProvenance(request dtos.ProvenanceInput) (dtos.Pro
 
 	vendors, err := prov.GetProvenanceByPurlNames(purls, "")
 	if err != nil {
-		return dtos.ProvenanceOutput{}, 0, err
+		return dtos.ProvenanceOutput{}, models.QuerySummary{}, err
 	}
-	curatedCountries := prov.ProcessCuratedVendors(vendors)
 
+	tooMany, err2many := prov.GetTooManyContributors(purls, "github")
+	if err2many != nil {
+		return dtos.ProvenanceOutput{}, models.QuerySummary{}, err2many
+	}
+
+	curatedCountries := prov.ProcessCuratedVendors(vendors)
 	vendorsMap := make(map[string][]models.Provenance)
 
 	for _, v := range vendors {
 		vendorsMap[v.PurlName] = append(vendorsMap[v.PurlName], v)
 	}
 
+	for _, purl := range request.Purls {
+
+		purlName, err := utils.PurlNameFromString(purl.Purl) // Make sure we just have the bare minimum for a Purl Name
+		if err == nil {
+			if !(len(vendorsMap[purlName]) > 0) && !existPurl(summary.PurlsFailedToParse, purl.Purl) {
+				summary.PurlsWOInfo = append(summary.PurlsWOInfo, purl.Purl)
+			}
+			if existPurl(tooMany, purlName) {
+				summary.PurlsTooMuchData = append(summary.PurlsTooMuchData, purl.Purl)
+			}
+		}
+	}
+
 	retV := dtos.ProvenanceOutput{}
 
 	//Create the response
-	for k, listOfVendors := range vendorsMap {
+
+	for _, purl := range request.Purls {
+		purlName, err := utils.PurlNameFromString(purl.Purl)
+		if err != nil {
+			continue
+		}
+		listOfVendors := vendorsMap[purlName]
+
 		var provOutItem dtos.ProvenanceOutputItem
 
-		provOutItem.Purl = k
+		provOutItem.Purl = purl.Purl
 		for _, vendor := range listOfVendors {
 			if vendor.DeclaredLocation != "" {
 				provOutItem.DeclaredLocations = append(provOutItem.DeclaredLocations, dtos.DeclaredProvenanceItem{Type: vendor.Type, Location: vendor.DeclaredLocation})
@@ -121,5 +157,5 @@ func (p ProvenanceUseCase) GetProvenance(request dtos.ProvenanceInput) (dtos.Pro
 		retV.Provenance = append(retV.Provenance, provOutItem)
 
 	}
-	return retV, notFound, nil
+	return retV, summary, nil
 }

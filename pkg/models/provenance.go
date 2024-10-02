@@ -105,3 +105,23 @@ func (m *provenanceModel) GetProvenanceByPurlNames(purlNames []string, purlType 
 	}
 	return allSources, nil
 }
+
+// GetProvenanceByPurlName get declared and curated locations for contributors and authors from a list of purlnames
+func (m *provenanceModel) GetTooManyContributors(purlNames []string, purlType string) ([]string, error) {
+	list := ""
+	list = strings.Join(purlNames, "','")
+	list = "('" + list + "')"
+	var purls []string
+	query := ` 
+			select tmc.purl_name 
+			from too_many_contributors tmc 
+			where tmc.purl_name in ` + list + `
+		      AND tmc.mine_id = 5;`
+	err := m.conn.SelectContext(m.ctx, &purls, query)
+	if err != nil {
+		m.s.Errorf("Error: Failed to query %v: %+v", purlNames, err)
+		return nil, fmt.Errorf("failed to query : %v", err)
+	}
+
+	return purls, nil
+}
