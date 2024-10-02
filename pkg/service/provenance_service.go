@@ -21,6 +21,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"github.com/jmoiron/sqlx"
@@ -70,7 +71,7 @@ func (p provenanceServer) GetComponentProvenance(ctx context.Context, request *c
 	defer closeDbConnection(conn)
 	// Search the KB for information about each Provenance
 	provUc := usecase.NewProvenance(ctx, conn)
-	dtoProv, notFound, err := provUc.GetProvenance(dtoRequest)
+	dtoProv, summary, err := provUc.GetProvenance(dtoRequest)
 
 	if err != nil {
 		s.Errorf("Failed to get provenance: %v", err)
@@ -87,10 +88,30 @@ func (p provenanceServer) GetComponentProvenance(ctx context.Context, request *c
 	// Set the status and respond with the data
 
 	statusResp := common.StatusResponse{Status: common.StatusCode_SUCCESS, Message: "Success"}
-	if notFound > 0 {
+	messages := []string{}
+	if len(summary.PurlsFailedToParse) > 0 {
+		messages = append(messages, fmt.Sprintf("Failed to parse: %s", strings.Join(summary.PurlsFailedToParse, ", ")))
 		statusResp.Status = common.StatusCode_SUCCEEDED_WITH_WARNINGS
-		statusResp.Message = fmt.Sprintf("No information found for %d purl(s)", notFound)
 	}
+
+	if len(summary.PurlsNotFound) > 0 {
+		messages = append(messages, fmt.Sprintf("Can't find purl(s): %s", strings.Join(summary.PurlsNotFound, ", ")))
+		statusResp.Status = common.StatusCode_SUCCEEDED_WITH_WARNINGS
+	}
+	if len(summary.PurlsWOInfo) > 0 {
+		messages = append(messages, fmt.Sprintf("Can't find information for: %s", strings.Join(summary.PurlsWOInfo, ", ")))
+		statusResp.Status = common.StatusCode_SUCCEEDED_WITH_WARNINGS
+	}
+	if len(summary.PurlsTooMuchData) > 0 {
+		messages = append(messages, fmt.Sprintf("Too many contributors for: %s", strings.Join(summary.PurlsTooMuchData, ", ")))
+		statusResp.Status = common.StatusCode_SUCCEEDED_WITH_WARNINGS
+	}
+	if len(messages) == 0 {
+		statusResp.Message = "Success"
+	} else {
+		statusResp.Message = strings.Join(messages, ";")
+	}
+
 	return &pb.ProvenanceResponse{Purls: provResponse.Purls, Status: &statusResp}, nil
 }
 
