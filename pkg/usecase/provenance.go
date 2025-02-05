@@ -144,7 +144,7 @@ func (p ProvenanceUseCase) GetProvenance(request dtos.ProvenanceInput) (dtos.Pro
 		}
 
 		//add curated values
-		for k, v := range curatedCountries[provOutItem.Purl] {
+		for k, v := range curatedCountries[purlName] {
 			i, err := strconv.Atoi(k)
 			if err == nil {
 				countryName, err := countries.GetCountryById(i)
