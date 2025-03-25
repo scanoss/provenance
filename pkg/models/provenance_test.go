@@ -18,7 +18,6 @@ package models
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
@@ -27,15 +26,6 @@ import (
 	zlog "scanoss.com/provenance/pkg/logger"
 )
 
-func concat(args ...interface{}) (string, error) {
-	var result string
-	for _, arg := range args {
-		if arg != nil {
-			result += fmt.Sprint(arg)
-		}
-	}
-	return result, nil
-}
 func TestContributorProvenance(t *testing.T) {
 	err := zlog.NewSugaredDevLogger()
 	if err != nil {
@@ -66,7 +56,7 @@ func TestContributorProvenance(t *testing.T) {
 	}
 
 	//CloseConn(conn)
-	cProvModel := NewProvenanceModel(ctx, conn)
+	cProvModel := NewProvenanceModel(ctx, s, conn)
 	purlsNames := []string{"torvalds/uemacs", "scanoss/engine"}
 	list, errq := cProvModel.GetProvenanceByPurlNames(purlsNames, "")
 	if errq != nil {

@@ -41,6 +41,7 @@ func concat(args ...interface{}) (string, error) {
 	}
 	return result, nil
 }
+
 func TestProvenanceUseCase(t *testing.T) {
 
 	err := zlog.NewSugaredDevLogger()
@@ -74,10 +75,10 @@ func TestProvenanceUseCase(t *testing.T) {
 		}
 		return nil
 	})
+	err = sqliteConn
 	if err != nil {
 		log.Fatal("Error al registrar la función CONCAT:", err)
 	}
-	_ = sqliteConn
 	defer models.CloseConn(conn)
 	err = models.LoadTestSqlData(db, ctx, conn)
 	if err != nil {
@@ -96,7 +97,7 @@ func TestProvenanceUseCase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to load Config: %v", err)
 	}
-	provUc := NewProvenance(ctx, conn)
+	provUc := NewProvenance(ctx, s, conn)
 
 	requestDto, err := dtos.ParseProvenanceInput(s, []byte(provRequest))
 	if err != nil {
@@ -111,7 +112,7 @@ func TestProvenanceUseCase(t *testing.T) {
 
 	}
 	//fmt.Println(countries)
-	fmt.Printf("Provenance response: %+v, %d\n", countries, notFound)
+	fmt.Printf("Provenance response: %+v, %v\n", countries, notFound)
 	var provBadRequest = `{
 	   		    "purls": [
 	   		        {

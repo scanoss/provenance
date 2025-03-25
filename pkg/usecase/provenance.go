@@ -56,8 +56,8 @@ func existPurl(purls []string, purl string) bool {
 	return false
 }
 
-func NewProvenance(ctx context.Context, conn *sqlx.Conn) *ProvenanceUseCase {
-	return &ProvenanceUseCase{ctx: ctx, conn: conn}
+func NewProvenance(ctx context.Context, s *zap.SugaredLogger, conn *sqlx.Conn) *ProvenanceUseCase {
+	return &ProvenanceUseCase{ctx: ctx, s: s, conn: conn}
 }
 
 // GetProvenance takes the Provenance Input request, searches for Provenance data and returns a ProvenanceOutput struct
@@ -68,7 +68,7 @@ func (p ProvenanceUseCase) GetProvenance(request dtos.ProvenanceInput) (dtos.Pro
 		return dtos.ProvenanceOutput{}, models.QuerySummary{}, errors.New("empty list of purls")
 	}
 	summary := models.QuerySummary{}
-	purls := []string{}
+	var purls []string
 	//Prepare purls to query
 	for _, purl := range request.Purls {
 
@@ -90,7 +90,7 @@ func (p ProvenanceUseCase) GetProvenance(request dtos.ProvenanceInput) (dtos.Pro
 			summary.PurlsFailedToParse = append(summary.PurlsFailedToParse, purl.Purl)
 		}
 	}
-	prov := models.NewProvenanceModel(p.ctx, p.conn)
+	prov := models.NewProvenanceModel(p.ctx, p.s, p.conn)
 	countries := models.NewCountryMapModel(p.ctx, p.conn)
 
 	vendors, err := prov.GetProvenanceByPurlNames(purls, "")

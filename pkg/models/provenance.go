@@ -27,7 +27,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type provenanceModel struct {
+type ProvenanceModel struct {
 	ctx  context.Context
 	s    *zap.SugaredLogger
 	conn *sqlx.Conn
@@ -42,12 +42,12 @@ type Provenance struct {
 }
 
 // NewProvenanceModel creates a new instance of a provenance Model
-func NewProvenanceModel(ctx context.Context, conn *sqlx.Conn) *provenanceModel {
-	return &provenanceModel{ctx: ctx, conn: conn}
+func NewProvenanceModel(ctx context.Context, s *zap.SugaredLogger, conn *sqlx.Conn) *ProvenanceModel {
+	return &ProvenanceModel{ctx: ctx, s: s, conn: conn}
 }
 
 // ProcessCuratedVendors assigns a list of country name to given set of id's of a set of provenance records
-func (m *provenanceModel) ProcessCuratedVendors(vendors []Provenance) map[string]map[string]int {
+func (m *ProvenanceModel) ProcessCuratedVendors(vendors []Provenance) map[string]map[string]int {
 	curatedCountries := make(map[string]map[string]int)
 	for _, v := range vendors {
 		if v.CountriesId != "" {
@@ -68,7 +68,7 @@ func (m *provenanceModel) ProcessCuratedVendors(vendors []Provenance) map[string
 }
 
 // GetProvenanceByPurlName get declared and curated locations for contributors and authors from a list of purlnames
-func (m *provenanceModel) GetProvenanceByPurlNames(purlNames []string, purlType string) ([]Provenance, error) {
+func (m *ProvenanceModel) GetProvenanceByPurlNames(purlNames []string, purlType string) ([]Provenance, error) {
 	list := ""
 	list = strings.Join(purlNames, "','")
 	list = "('" + list + "')"
@@ -107,7 +107,7 @@ func (m *provenanceModel) GetProvenanceByPurlNames(purlNames []string, purlType 
 }
 
 // GetProvenanceByPurlName get declared and curated locations for contributors and authors from a list of purlnames
-func (m *provenanceModel) GetTooManyContributors(purlNames []string, purlType string) ([]string, error) {
+func (m *ProvenanceModel) GetTooManyContributors(purlNames []string, purlType string) ([]string, error) {
 	list := ""
 	list = strings.Join(purlNames, "','")
 	list = "('" + list + "')"

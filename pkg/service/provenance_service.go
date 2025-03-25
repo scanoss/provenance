@@ -70,7 +70,7 @@ func (p provenanceServer) GetComponentProvenance(ctx context.Context, request *c
 	}
 	defer closeDbConnection(conn)
 	// Search the KB for information about each Provenance
-	provUc := usecase.NewProvenance(ctx, conn)
+	provUc := usecase.NewProvenance(ctx, s, conn)
 	dtoProv, summary, err := provUc.GetProvenance(dtoRequest)
 
 	if err != nil {
