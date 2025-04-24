@@ -9,6 +9,7 @@
     "Host":   "host.docker.internal",
     "User":   "scanoss",
     "Passwd": "secret123!",
-    "Schema": "scanoss"
+    "Schema": "scanoss",
+    "Trace": false
   }
 }

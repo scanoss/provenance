@@ -3,8 +3,8 @@
 ##########################################
 #
 # This script will copy all the required files into the correct locations on the server
-# Config goes into: /usr/local/etc/scanoss/provenance
-# Logs go into: /var/log/scanoss/provenance
+# Config goes into: /usr/local/etc/scanoss/geoprovenance
+# Logs go into: /var/log/scanoss/geoprovenance
 # Service definition goes into: /etc/systemd/system
 # Binary & startup º into: /usr/local/bin
 #
@@ -12,14 +12,14 @@
 
 if [ "$1" = "-h" ] || [ "$1" = "-help" ] ; then
   echo "$0 [-help] [environment]"
-  echo "   Setup and copy the relevant files into place on a server to run the SCANOSS PROVENANCE API"
+  echo "   Setup and copy the relevant files into place on a server to run the SCANOSS GEO PROVENANCE API"
   echo "   [environment] allows the optional specification of a suffix to allow multiple services to be deployed at the same time (optional)"
   exit 1
 fi
 
-CONF_DIR=/usr/local/etc/scanoss/provenance
-LOGS_DIR=/var/log/scanoss/provenance
-CONF_DOWNLOAD=https://raw.githubusercontent.com/scanoss/provenance/main/config/app-config-prod.json
+CONF_DIR=/usr/local/etc/scanoss/geoprovenance
+LOGS_DIR=/var/log/scanoss/geoprovenance
+CONF_DOWNLOAD=https://raw.githubusercontent.com/scanoss/geoprovenance/main/config/app-config-prod.json
 
 ENVIRONMENT=""
 FORCE_INSTALL=0
@@ -58,7 +58,7 @@ fi
 if [ "$FORCE_INSTALL" -eq 1 ]; then
   echo "Forcing installation..."
 else
-  read -p "Install Provenance API $ENVIRONMENT (y/n) [n]? " -n 1 -r
+  read -p "Install Geo Provenance API $ENVIRONMENT (y/n) [n]? " -n 1 -r
   echo
   if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Starting installation..."
@@ -68,7 +68,7 @@ else
   fi
 fi
 # Setup all the required folders and ownership
-echo "Setting up Provenance API system folders..."
+echo "Setting up Geo Provenance API system folders..."
 if ! mkdir -p "$CONF_DIR" ; then
   echo "mkdir failed"
   exti 1
@@ -86,11 +86,11 @@ if [ "$RUNTIME_USER" != "root" ] ; then
   fi
 fi
 # Setup the service on the system (defaulting to service name without environment)
-SC_SERVICE_FILE="scanoss-provenance-api.service"
-SC_SERVICE_NAME="scanoss-provenance-api"
+SC_SERVICE_FILE="scanoss-geoprovenance-api.service"
+SC_SERVICE_NAME="scanoss-geoprovenance-api"
 if [ -n "$ENVIRONMENT" ] ; then
-  SC_SERVICE_FILE="scanoss-provenance-api-${ENVIRONMENT}.service"
-  SC_SERVICE_NAME="scanoss-provenance-api-${ENVIRONMENT}"
+  SC_SERVICE_FILE="scanoss-geoprovenance-api-${ENVIRONMENT}.service"
+  SC_SERVICE_NAME="scanoss-geoprovenance-api-${ENVIRONMENT}"
 fi
 export service_stopped=""
 if [ -f "/etc/systemd/system/$SC_SERVICE_FILE" ] ; then
@@ -110,11 +110,11 @@ if [ -f "$SCRIPT_DIR/$SC_SERVICE_FILE" ] ; then
 else 
   echo "No service file found at $SCRIPT_DIR/$SC_SERVICE_FILE"
 fi
-if ! cp $SCRIPT_DIR/scanoss-provenance-api.sh /usr/local/bin ; then
+if ! cp $SCRIPT_DIR/scanoss-geoprovenance-api.sh /usr/local/bin ; then
   echo "Provenance api startup script copy failed"
   exit 1
 fi
-if ! chmod +x /usr/local/bin/scanoss-provenance-api.sh ; then
+if ! chmod +x /usr/local/bin/scanoss-geoprovenance-api.sh ; then
   echo "Provenance api startup script permissions failed"
   exit 1
 fi
@@ -141,17 +141,17 @@ else
   fi
 fi
 # Copy the binaries if requested
-BINARY=scanoss-provenance-api
+BINARY=scanoss-geoprovenance-api
 if [ -f "$SCRIPT_DIR/$BINARY" ] ; then
   echo "Copying app binary to /usr/local/bin ..."
   if ! cp $SCRIPT_DIR/$BINARY /usr/local/bin ; then
     echo "copy $BINARY failed"
-    echo "Please make sure the service is stopped: systemctl stop scanoss-provenance-api"
+    echo "Please make sure the service is stopped: systemctl stop scanoss-geoprovenance-api"
     exit 1
   fi
   if ! chmod +x /usr/local/bin/$BINARY ; then
     echo "execution permission on $BINARY failed"
-    echo "Please make sure the use can set the binary as executable: chmod +x /usr/local/bin/scanoss-provenance-api"
+    echo "Please make sure the use can set the binary as executable: chmod +x /usr/local/bin/scanoss-geoprovenance-api"
   fi
 else
   echo "Please copy the Provenance API binary file into: /usr/local/bin/$BINARY"
@@ -177,5 +177,5 @@ echo "Logs are stored in: $LOGS_DIR"
 echo "Start the service using: systemctl start $SC_SERVICE_NAME"
 echo "Stop the service using: systemctl stop $SC_SERVICE_NAME"
 echo "Get service status using: systemctl status $SC_SERVICE_NAME"
-echo "Count the number of running scans using: pgrep -P \$(pgrep -d, scanoss-provenance-api) | wc -l"
+echo "Count the number of running scans using: pgrep -P \$(pgrep -d, scanoss-geoprovenance-api) | wc -l"
 echo

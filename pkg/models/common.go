@@ -83,13 +83,13 @@ func RegisterConcat(db *sqlx.DB, ctx context.Context) {
 
 	sqliteConn := conn.Raw(func(driverConn interface{}) error {
 		if sqliteConn, ok := driverConn.(*sqlite3.SQLiteConn); ok {
-			// Registrar la función CONCAT
+			// Register CONCAT function
 			err := sqliteConn.RegisterFunc("CONCAT", Concat, true)
 			if err != nil {
 				return fmt.Errorf("error al registrar la función CONCAT: %w", err)
 			}
 		} else {
-			return fmt.Errorf("No se pudo obtener la conexión subyacente de SQLite")
+			return fmt.Errorf("Could not connect to SQLite")
 		}
 		return nil
 	})

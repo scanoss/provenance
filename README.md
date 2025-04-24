@@ -54,7 +54,7 @@ Run the SCANOSS Provenance Server Docker image by specifying the environmental f
 You may also need to expose the ```APP_PORT``` on a given ```interface:port``` with the ```-p``` argument.
 
 ```bash
-docker run -it -v "$(pwd)":"$(pwd)" -p 50051:50051 ghcr.io/scanoss/scanoss-provenance -json-config $(pwd)/config/app-config-docker-local-dev.json -debug
+docker run -it -v "$(pwd)":"$(pwd)" -p 50051:50051 ghcr.io/scanoss/scanoss-geoprovenance -json-config $(pwd)/config/app-config-docker-local-dev.json -debug
 ```
 
 ## Development

@@ -49,6 +49,9 @@ INSERT INTO github_contributors
 VALUES('scanoss/engine', 'scanoss-qg');
 INSERT INTO github_contributors
 (purl_name, contributor)
+VALUES('scanoss/minr', 'scanoss-qg');
+INSERT INTO github_contributors
+(purl_name, contributor)
 VALUES('scanoss/engine', 'scanossjs');
 INSERT INTO github_contributors
 (purl_name, contributor)
@@ -68,3 +71,9 @@ VALUES('scanoss/engine', 'superkaiy');
 INSERT INTO github_contributors
 (purl_name, contributor)
 VALUES('scanoss/engine', 'vpenso');
+
+
+DROP TABLE IF EXISTS too_many_contributors;
+
+CREATE TABLE
+  too_many_contributors (purl_name text NOT NULL, mine_id integer NOT NULL);

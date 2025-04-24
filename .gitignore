@@ -8,3 +8,21 @@
 /dataSources.local.xml
 
 .idea/
+
+*.wfp
+*-result.json
+
+# Ingore the version text file. only used during build
+version.txt
+
+tmp/
+
+# Ignore package files
+*.tgz
+*.tar
+*.gz
+*.zip
+
+.DS_Store
+
+scripts/scanoss-*-api

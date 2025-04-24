@@ -1,4 +1,4 @@
-FROM golang:1.22 AS build
+FROM golang:1.24 AS build
 
 WORKDIR /app
 
@@ -10,15 +10,15 @@ RUN go mod download
 COPY . ./
 
 RUN go generate ./pkg/cmd/server.go
-RUN go build -o ./scanoss-provenance ./cmd/server
+RUN go build -o ./scanoss-geoprovenance ./cmd/server
 
 FROM debian:buster-slim
 
 WORKDIR /app
  
-COPY --from=build /app/scanoss-provenance /app/scanoss-provenance
+COPY --from=build /app/scanoss-geoprovenance /app/scanoss-geoprovenance
 
 EXPOSE 50056
 
-ENTRYPOINT ["./scanoss-provenance"]
+ENTRYPOINT ["./scanoss-geoprovenance"]
 #CMD ["--help"]
