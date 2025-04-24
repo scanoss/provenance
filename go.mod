@@ -9,7 +9,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.28
 	github.com/package-url/packageurl-go v0.1.3
 	github.com/scanoss/go-grpc-helper v0.9.0
-	github.com/scanoss/papi v0.7.0
+	github.com/scanoss/papi v0.7.2
 	github.com/scanoss/zap-logging-helper v0.4.0
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.72.0
