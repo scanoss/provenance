@@ -23,7 +23,7 @@ import (
 	"net/http"
 
 	gw "github.com/scanoss/go-grpc-helper/pkg/grpc/gateway"
-	pb "github.com/scanoss/papi/api/provenancev2"
+	pb "github.com/scanoss/papi/api/geoprovenancev2"
 	zlog "github.com/scanoss/zap-logging-helper/pkg/logger"
 	myconfig "scanoss.com/provenance/pkg/config"
 )
@@ -42,7 +42,7 @@ func RunServer(config *myconfig.ServerConfig, ctx context.Context, grpcPort, htt
 	go func() {
 		ctx2, cancel := context.WithCancel(ctx)
 		defer cancel()
-		if err := pb.RegisterProvenanceHandlerFromEndpoint(ctx2, mux, grpcGateway, opts); err != nil {
+		if err := pb.RegisterGeoProvenanceHandlerFromEndpoint(ctx2, mux, grpcGateway, opts); err != nil {
 			zlog.S.Panicf("Failed to start HTTP gateway %v", err)
 		}
 		gw.StartGateway(srv, config.TLS.CertFile, config.TLS.KeyFile, startTLS)

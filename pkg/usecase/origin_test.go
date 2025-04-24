@@ -32,17 +32,7 @@ import (
 	"scanoss.com/provenance/pkg/models"
 )
 
-func concat(args ...interface{}) (string, error) {
-	var result string
-	for _, arg := range args {
-		if arg != nil {
-			result += fmt.Sprint(arg)
-		}
-	}
-	return result, nil
-}
-
-func TestProvenanceUseCase(t *testing.T) {
+func TestOriginUseCase(t *testing.T) {
 
 	err := zlog.NewSugaredDevLogger()
 	if err != nil {
@@ -68,10 +58,10 @@ func TestProvenanceUseCase(t *testing.T) {
 			// Registrar la función CONCAT
 			err := sqliteConn.RegisterFunc("CONCAT", concat, true)
 			if err != nil {
-				return fmt.Errorf("error al registrar la función CONCAT: %w", err)
+				return fmt.Errorf("Error registering CONCAT: %w", err)
 			}
 		} else {
-			return fmt.Errorf("No se pudo obtener la conexión subyacente de SQLite")
+			return fmt.Errorf("Could not load SQLite connection")
 		}
 		return nil
 	})
@@ -85,43 +75,43 @@ func TestProvenanceUseCase(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when loading test data", err)
 	}
 	var provRequest = `{
-		      "purls": [
-		        {
-		          "purl": "pkg:github/scanoss/engine",
-		          "requirement": "5.2.4"
-		        }
-		      ]
-		  	}`
+			   "purls": [
+				 {
+				   "purl": "pkg:github/scanoss/engine",
+				   "requirement": "5.2.4"
+				 }
+			   ]
+			   }`
 	myConfig, err := myconfig.NewServerConfig(nil)
 	_ = myConfig
 	if err != nil {
 		t.Fatalf("failed to load Config: %v", err)
 	}
-	provUc := NewProvenance(ctx, conn)
+	provUc := NewOrigin(ctx, conn)
 
 	requestDto, err := dtos.ParseProvenanceInput(s, []byte(provRequest))
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when parsing input json", err)
 	}
-	countries, notFound, err := provUc.GetProvenance(requestDto)
+	countries, notFound, err := provUc.GetOrigin(requestDto)
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when getting Provenance", err)
 	}
-	if len(countries.Provenance[0].DeclaredLocations) == 0 {
-		t.Fatalf("Expected to get at least 1 declared location")
+	if len(countries.Provenance[0].Countries) == 0 {
+		t.Fatalf("Expected to get at least 1 country")
 
 	}
 	//fmt.Println(countries)
 	fmt.Printf("Provenance response: %+v, %+v\n", countries, notFound)
 	var provBadRequest = `{
-	   		    "purls": [
-	   		        {
-	   		          "purl": "pkg:npm/"
-
-	   		        }
-	   		  ]
-	   		}
-	   		`
+					"purls": [
+						{
+						  "purl": "pkg:npm/"
+ 
+						}
+				  ]
+				}
+				`
 
 	requestDto, err = dtos.ParseProvenanceInput(s, []byte(provBadRequest))
 
@@ -129,7 +119,7 @@ func TestProvenanceUseCase(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when parsing input json", err)
 	}
 
-	countries, _, err = provUc.GetProvenance(requestDto)
+	countries, _, err = provUc.GetOrigin(requestDto)
 
 	if err == nil && len(countries.Provenance) > 0 {
 		t.Fatalf("did not get an expected error: %v", countries)

@@ -41,6 +41,16 @@ type Provenance struct {
 	CountriesId      string `db:"countries_id"`
 }
 
+type Origin struct {
+	CountryName      string `db:"country"`
+	ContributorCount int16  `db:"vendor_count"`
+}
+
+type LocationDistribution struct {
+	CountryName           string
+	ContributorPercentage float32
+}
+
 // NewProvenanceModel creates a new instance of a provenance Model
 func NewProvenanceModel(ctx context.Context, conn *sqlx.Conn) *provenanceModel {
 	return &provenanceModel{ctx: ctx, conn: conn}
@@ -125,3 +135,64 @@ func (m *provenanceModel) GetTooManyContributors(purlNames []string, purlType st
 
 	return purls, nil
 }
+
+func (m *provenanceModel) GetTimeZoneOriginByPurlName(purlName string, purlType string) ([]Origin, error) {
+
+	var allSources []Origin
+	query := `
+		SELECT
+  vl.timezone_based_country AS country,
+  COUNT(DISTINCT v.id) AS vendor_count
+FROM
+  github_contributors gc
+JOIN
+  vendors v ON gc.contributor = v.username
+JOIN
+  vendor_locations vl ON v.id = vl.vendor_id
+WHERE
+  gc.purl_name = $1
+  AND vl.timezone_based_country IS NOT NULL 
+GROUP BY
+ country
+ORDER BY
+  vendor_count DESC;
+
+`
+	err := m.conn.SelectContext(m.ctx, &allSources, query, purlName)
+	if err != nil {
+		m.s.Errorf("Error: Failed to query %v: %+v", purlName, err)
+		return nil, fmt.Errorf("failed to query : %v", err)
+	}
+	return allSources, nil
+}
+
+/*
+func (m *provenanceModel) GetCuratedLocationByPurlName(purlName string, purlType string) ([]Origin, error) {
+
+	var allSources []Origin
+	query := `
+	SELECT
+    	c.country_name as country, COUNT(DISTINCT vl.vendor_id) AS vendor_count
+	FROM
+    	vendor_locations vl, github_contributors gc, vendors v
+CROSS JOIN
+    unnest(vl.curated_countries_ids) AS unnested_country_id
+JOIN
+    countries c ON c.id = unnested_country_id
+WHERE
+    v.username = gc.contributor
+    AND gc.purl_name = $1
+    AND vl.vendor_id = v.id
+GROUP BY
+    c.id, c.country_name, c.country_code
+ORDER BY
+    vendor_count DESC;`
+	err := m.conn.SelectContext(m.ctx, &allSources, query, purlName)
+	if err != nil {
+		fmt.Printf("\n\n%+v\n", err)
+		m.s.Errorf("Error: Failed to query %v: %+v", purlName, err)
+		return nil, fmt.Errorf("failed to query : %v", err)
+	}
+	return allSources, nil
+}
+*/

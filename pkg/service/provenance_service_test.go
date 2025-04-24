@@ -27,7 +27,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	common "github.com/scanoss/papi/api/commonv2"
-	pb "github.com/scanoss/papi/api/provenancev2"
+	pb "github.com/scanoss/papi/api/geoprovenancev2"
 	myconfig "scanoss.com/provenance/pkg/config"
 	"scanoss.com/provenance/pkg/dtos"
 	zlog "scanoss.com/provenance/pkg/logger"
@@ -58,7 +58,7 @@ func TestCProvenanceServer_Echo(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		s       pb.ProvenanceServer
+		s       pb.GeoProvenanceServer
 		args    args
 		want    *common.EchoResponse
 		wantErr bool
@@ -101,6 +101,7 @@ func TestCProvenanceServer_GetProvenance(t *testing.T) {
 	defer models.CloseDB(db)
 	ctx = ctxzap.ToContext(ctx, zlog.L)
 	models.RegisterConcat(db, ctx)
+
 	err = models.LoadTestSqlData(db, nil, nil)
 	if err != nil {
 		fmt.Println(err)
@@ -117,7 +118,7 @@ func TestCProvenanceServer_GetProvenance(t *testing.T) {
 	}
 	request := common.PurlRequest{Purls: []*common.PurlRequest_Purls{&common.PurlRequest_Purls{Purl: "pkg:github/scanoss/engine"}, &common.PurlRequest_Purls{Purl: "pkg:github/torvalds/uemacs"}}}
 
-	got, errReq := s.GetComponentProvenance(ctx, &request)
+	got, errReq := s.GetComponentContributors(ctx, &request)
 	if errReq != nil {
 		t.Logf("unexpected error on request %+v", errReq)
 	}
@@ -134,6 +135,7 @@ func TestCProvenanceServer_GetProvenance(t *testing.T) {
 		t.Error("expected to get 1 result")
 
 	} else {
+		fmt.Printf("%+v\n", rcv)
 		firstPurl := rcv.Provenance[0]
 		if len(firstPurl.DeclaredLocations) == 0 {
 			t.Error("expected to get at least 1 declared location")
@@ -144,6 +146,64 @@ func TestCProvenanceServer_GetProvenance(t *testing.T) {
 			if firstCuratedCountry.Country != "Argentina" && firstCuratedCountry.Country != "Spain" && firstCuratedCountry.Country != "Afghanistan" {
 				t.Errorf("Curated country (%s) was not expected", firstCuratedCountry.Country)
 			}
+		}
+
+	}
+
+}
+
+func TestProvenanceServer_GetOrigin(t *testing.T) {
+	ctx := context.Background()
+	err := zlog.NewSugaredDevLogger()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a sugared logger", err)
+	}
+	defer zlog.SyncZap()
+	db, err := sqlx.Connect("sqlite3", ":memory:")
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer models.CloseDB(db)
+	ctx = ctxzap.ToContext(ctx, zlog.L)
+	models.RegisterConcat(db, ctx)
+
+	err = models.LoadTestSqlData(db, nil, nil)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	myConfig, err := myconfig.NewServerConfig(nil)
+	if err != nil {
+		t.Fatalf("failed to load Config: %v", err)
+	}
+
+	s := NewProvenanceServer(db, myConfig)
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when loading test data", err)
+	}
+	request := common.PurlRequest{Purls: []*common.PurlRequest_Purls{&common.PurlRequest_Purls{Purl: "pkg:github/scanoss/engine"}, &common.PurlRequest_Purls{Purl: "pkg:github/torvalds/uemacs"}}}
+
+	got, errReq := s.GetComponentOrigin(ctx, &request)
+	if errReq != nil {
+		t.Logf("unexpected error on request %+v", errReq)
+	}
+	var rcv dtos.OriginOutput
+	jsonOut, errResp := json.Marshal(got)
+	if errResp != nil {
+		t.Logf("unexpected error on unmarshalling response %+v", errResp)
+	}
+	err = json.Unmarshal(jsonOut, &rcv)
+	if err != nil {
+		t.Logf("unexpected error on unmarshalling to a dto %+v", err)
+	}
+	if len(rcv.Provenance) == 0 {
+		t.Error("expected to get 1 result")
+
+	} else {
+		fmt.Printf("%+v\n", rcv)
+		firstPurl := rcv.Provenance[0]
+		if len(firstPurl.Countries) == 0 {
+			t.Error("expected to get at least 1 location")
 		}
 
 	}

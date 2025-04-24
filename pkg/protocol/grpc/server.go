@@ -21,7 +21,7 @@ package grpc
 import (
 	"github.com/scanoss/go-grpc-helper/pkg/grpc/otel"
 	gs "github.com/scanoss/go-grpc-helper/pkg/grpc/server"
-	pb "github.com/scanoss/papi/api/provenancev2"
+	pb "github.com/scanoss/papi/api/geoprovenancev2"
 
 	myconfig "scanoss.com/provenance/pkg/config"
 
@@ -56,7 +56,7 @@ import (
 }
 */
 // RunServer runs gRPC service to publish.
-func RunServer(config *myconfig.ServerConfig, v2API pb.ProvenanceServer, port string,
+func RunServer(config *myconfig.ServerConfig, v2API pb.GeoProvenanceServer, port string,
 	allowedIPs, deniedIPs []string, startTLS bool, version string) (*grpc.Server, error) {
 	// Start up Open Telemetry is requested
 	var oltpShutdown = func() {}
@@ -77,7 +77,7 @@ func RunServer(config *myconfig.ServerConfig, v2API pb.ProvenanceServer, port st
 		return nil, err
 	}
 	// Register the service API and start the server in the background
-	pb.RegisterProvenanceServer(server, v2API)
+	pb.RegisterGeoProvenanceServer(server, v2API)
 	go func() {
 		gs.StartGrpcServer(listen, server, startTLS)
 		oltpShutdown()
