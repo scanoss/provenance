@@ -1,6 +1,6 @@
 
 #vars
-IMAGE_NAME=scanoss-provenance
+IMAGE_NAME=scanoss-geoprovenance
 REPO=scanoss
 DOCKER_FULLNAME=${REPO}/${IMAGE_NAME}
 GHCR_FULLNAME=ghcr.io/${REPO}/${IMAGE_NAME}
@@ -28,6 +28,19 @@ unit_test: version ## Run all unit tests in the pkg folder
 	@echo "Running unit test framework..."
 	go test -v ./pkg/...
 
+lint_local: ## Run local instance of linting across the code base
+	golangci-lint run ./...
+
+lint_local_fix: ## Run local instance of linting across the code base including auto-fixing
+	golangci-lint run --fix ./...
+
+lint_docker: ## Run docker instance of linting across the code base
+	docker run --rm -v $(pwd):/app -v ~/.cache/golangci-lint/v1.50.1:/root/.cache -w /app golangci/golangci-lint:v1.50.1 golangci-lint run ./...
+
+run_local:  ## Launch the API locally for test
+	@echo "Launching API locally..."
+	go run cmd/server/main.go -json-config config/app-config-dev.json -debug
+
 ghcr_build: version  ## Build GitHub container image
 	@echo "Building GHCR container image..."
 	docker build --no-cache -t $(GHCR_FULLNAME) --platform linux/amd64 .
@@ -42,7 +55,6 @@ ghcr_push:  ## Push the GH container image to GH Packages
 	docker push $(GHCR_FULLNAME):latest
 
 ghcr_all: ghcr_build ghcr_tag ghcr_push  ## Execute all GitHub Package container actions
-
 
 build_amd: version  ## Build an AMD 64 binary
 	@echo "Building AMD binary $(VERSION)..."
