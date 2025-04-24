@@ -29,12 +29,13 @@ const (
 // ServerConfig is configuration for Server
 type ServerConfig struct {
 	App struct {
-		Name     string `env:"APP_NAME"`
-		GRPCPort string `env:"APP_PORT"`
-		RESTPort string `env:"REST_PORT"`
-		Debug    bool   `env:"APP_DEBUG"` // true/false
-		Trace    bool   `env:"APP_TRACE"` // true/false
-		Mode     string `env:"APP_MODE"`  // dev or prod
+		Name           string `env:"APP_NAME"`
+		GRPCPort       string `env:"APP_PORT"`
+		RESTPort       string `env:"REST_PORT"`
+		Debug          bool   `env:"APP_DEBUG"`           // true/false
+		Trace          bool   `env:"APP_TRACE"`           // true/false
+		Mode           string `env:"APP_MODE"`            // dev or prod
+		GRPCReflection bool   `env:"APP_GRPC_REFLECTION"` // Enables gRPC reflection service for debugging and discovery
 	}
 	Logging struct {
 		DynamicLogging bool   `env:"LOG_DYNAMIC"`      // true/false
@@ -57,12 +58,14 @@ type ServerConfig struct {
 	TLS struct {
 		CertFile string `env:"PROVENANCE_TLS_CERT"` // TLS Certificate
 		KeyFile  string `env:"PROVENANCE_TLS_KEY"`  // Private TLS Key
+		CN       string `env:"CPROVENANCE_TLS_CN"`  // Common Name (replaces the CN on the certificate)
 	}
 	Filtering struct {
 		AllowListFile  string `env:"PROVENANCE_ALLOW_LIST"`       // Allow list file for incoming connections
 		DenyListFile   string `env:"PROVENANCE_DENY_LIST"`        // Deny list file for incoming connections
 		BlockByDefault bool   `env:"PROVENANCE_BLOCK_BY_DEFAULT"` // Block request by default if they are not in the allow list
 		TrustProxy     bool   `env:"PROVENANCE_TRUST_PROXY"`      // Trust the interim proxy or not (causes the source IP to be validated instead of the proxy)
+
 	}
 	Components struct {
 		CommitMissing bool `env:"COMP_COMMIT_MISSING"` // Write component details to the DB if they are looked up live
