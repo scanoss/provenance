@@ -5,15 +5,15 @@ This folder contains convenience utilities for deploying, configuring and runnin
 The [scripts](.) folder contains an [env_setup.sh](env-setup.sh) script which attempts to do the following:
 * Set up the default folders
 * Set permissions
-* Set up service registration ([scanoss-provenance-api.service](scanoss-provenance-api.service))
-* Copy in binaries (if `scanoss-provenance-api` exist in the folder)
+* Set up service registration ([scanoss-geoprovenance-api.service](scanoss-geoprovenance-api.service))
+* Copy in binaries (if `scanoss-geoprovenance-api` exist in the folder)
 * Copy in preferred configuration (if `app-config-prod.json` exists in the folder)
 
 A sample development configuration file can be found in [config/app-config-dev.json](../config/app-config-dev.json).
 
-Logs are written by default to `/var/log/scanoss/provenance/scanoss-provenance-api-prod.log`.
+Logs are written by default to `/var/log/scanoss/geoprovenance/scanoss-geoprovenance-api-prod.log`.
 
-Configuration is written by default to: `/usr/local/etc/scanoss/provenance`.
+Configuration is written by default to: `/usr/local/etc/scanoss/geoprovenance`.
 
 ## Installation
 Running the [env_setup.sh](env-setup.sh) on the target server, takes care of installation. Simply run:
@@ -21,16 +21,16 @@ Running the [env_setup.sh](env-setup.sh) on the target server, takes care of ins
 ./env_setup.sh
 ```
 
-This will copy the configuration files to `/usr/local/etc/scanoss/provenance` the binaries to `/usr/local/bin` and the service registration to `/etc/systemd/system`. 
+This will copy the configuration files to `/usr/local/etc/scanoss/geoprovenance` the binaries to `/usr/local/bin` and the service registration to `/etc/systemd/system`. 
 
-It will also redirect logging to `/var/log/scanoss/provenance`.
+It will also redirect logging to `/var/log/scanoss/geoprovenance`.
 
 ### Multi-service Registration
 If there is a need to deploy more than one API service on the same server, this can be achieved by using a different `ENVIRONMENT` name.
 
-Create a copy of the [scanoss-provenance-api.service](scanoss-provenance-api.service) using the following command:
+Create a copy of the [scanoss-geoprovenance-api.service](scanoss-geoprovenance-api.service) using the following command:
 ```shell
-cp scanoss-provenance-api.service scanoss-provenance-api-<env>.service
+cp scanoss-geoprovenance-api.service scanoss-geoprovenance-api-<env>.service
 ```
 
 Where `env` is the name of this edition of the service (i.e. dev).

@@ -24,3 +24,5 @@ tmp/
 *.zip
 
 .DS_Store
+
+scripts/scanoss-*-api

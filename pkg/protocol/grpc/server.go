@@ -28,33 +28,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-// TODO Add proper service startup/shutdown here
-
-// RunServer runs gRPC service to publish
-/*func RunServer(ctx context.Context, v2API pb.ProvenanceServer, port string) error {
-	listen, err := net.Listen("tcp", ":"+port)
-	if err != nil {
-		return err
-	}
-	// register service
-	server := grpc.NewServer()
-	pb.RegisterProvenanceServer(server, v2API)
-	// graceful shutdown
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for range c {
-			// sig is a ^C, handle it
-			zlog.S.Info("shutting down gRPC server...")
-			server.GracefulStop()
-			<-ctx.Done()
-		}
-	}()
-	// start gRPC server
-	zlog.S.Info("starting gRPC server...")
-	return server.Serve(listen)
-}
-*/
 // RunServer runs gRPC service to publish.
 func RunServer(config *myconfig.ServerConfig, v2API pb.GeoProvenanceServer, port string,
 	allowedIPs, deniedIPs []string, startTLS bool, version string) (*grpc.Server, error) {
@@ -62,7 +35,7 @@ func RunServer(config *myconfig.ServerConfig, v2API pb.GeoProvenanceServer, port
 	var oltpShutdown = func() {}
 	if config.Telemetry.Enabled {
 		var err error
-		oltpShutdown, err = otel.InitTelemetryProviders(config.App.Name, "scanoss-provenance", version,
+		oltpShutdown, err = otel.InitTelemetryProviders(config.App.Name, "scanoss-geoprovenance", version,
 			config.Telemetry.OltpExporter, otel.GetTraceSampler(config.App.Mode), false)
 		if err != nil {
 			return nil, err
