@@ -49,6 +49,9 @@ func TestProvenanceUseCase(t *testing.T) {
 	defer models.CloseDB(db)
 
 	conn, err := db.Connx(ctx) // Get a connection from the pool
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
 	defer models.CloseConn(conn)
 	err = models.LoadTestSqlData(db, ctx, conn)
 	if err != nil {

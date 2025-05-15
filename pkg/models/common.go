@@ -21,8 +21,8 @@ package models
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	_ "modernc.org/sqlite"
+	"os"
 	zlog "scanoss.com/provenance/pkg/logger"
 
 	"github.com/jmoiron/sqlx"
@@ -31,7 +31,7 @@ import (
 // loadSqlData Load the specified SQL files into the supplied DB
 func loadSqlData(db *sqlx.DB, ctx context.Context, conn *sqlx.Conn, filename string) error {
 	fmt.Printf("Loading test data file: %v\n", filename)
-	file, err := ioutil.ReadFile(filename)
+	file, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	}
