@@ -48,7 +48,7 @@ func PurlNameFromString(purlString string) (string, error) {
 		return "", fmt.Errorf("no purl string supplied to parse")
 	}
 	matches := pkgRegex.FindStringSubmatch(purlString)
-	if matches != nil && len(matches) > 0 {
+	if len(matches) > 0 {
 		ti := pkgRegex.SubexpIndex("type")
 		ni := pkgRegex.SubexpIndex("name")
 		if ni >= 0 {
@@ -81,7 +81,7 @@ func ConvertPurlString(purlString string) string {
 // GetVersionFromReq parses a requirement string looking for an exact version specifier
 func GetVersionFromReq(purlReq string) string {
 	matches := vRegex.FindStringSubmatch(purlReq)
-	if matches != nil && len(matches) > 0 {
+	if len(matches) > 0 {
 		ni := vRegex.SubexpIndex("name")
 		if ni >= 0 {
 			zlog.S.Debugf("Changing requirement %v to Version %v", purlReq, matches[ni])

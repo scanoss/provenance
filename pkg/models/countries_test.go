@@ -19,14 +19,12 @@ package models
 import (
 	"context"
 	"fmt"
-	"testing"
-	"time"
-
 	_ "modernc.org/sqlite"
 	zlog "scanoss.com/provenance/pkg/logger"
+	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"golang.org/x/exp/rand"
+	"math/rand/v2"
 )
 
 func TestCountryLookoup(t *testing.T) {
@@ -52,10 +50,8 @@ func TestCountryLookoup(t *testing.T) {
 	}
 	countryModel := NewCountryMapModel(ctx, conn)
 	countriesToPick := []string{"Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria"}
-
-	rand.Seed(uint64(time.Now().UnixNano()))
-
-	randomIndex := rand.Intn(len(countriesToPick))
+	
+	randomIndex := rand.IntN(len(countriesToPick))
 	dbPK := randomIndex + 1
 
 	randomElement := countriesToPick[randomIndex]
