@@ -19,28 +19,17 @@ package usecase
 import (
 	"context"
 	"fmt"
-	"log"
 	"testing"
+
+	_ "modernc.org/sqlite"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattn/go-sqlite3"
-	_ "github.com/mattn/go-sqlite3"
 	myconfig "scanoss.com/provenance/pkg/config"
 	"scanoss.com/provenance/pkg/dtos"
 	zlog "scanoss.com/provenance/pkg/logger"
 	"scanoss.com/provenance/pkg/models"
 )
-
-func concat(args ...interface{}) (string, error) {
-	var result string
-	for _, arg := range args {
-		if arg != nil {
-			result += fmt.Sprint(arg)
-		}
-	}
-	return result, nil
-}
 
 func TestProvenanceUseCase(t *testing.T) {
 
@@ -53,32 +42,13 @@ func TestProvenanceUseCase(t *testing.T) {
 	ctx = ctxzap.ToContext(ctx, zlog.L)
 	s := ctxzap.Extract(ctx).Sugar()
 	_ = s
-	db, err := sqlx.Connect("sqlite3", ":memory:")
+	db, err := sqlx.Connect("sqlite", ":memory:")
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer models.CloseDB(db)
 
 	conn, err := db.Connx(ctx) // Get a connection from the pool
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-	}
-	sqliteConn := conn.Raw(func(driverConn interface{}) error {
-		if sqliteConn, ok := driverConn.(*sqlite3.SQLiteConn); ok {
-			// Registrar la función CONCAT
-			err := sqliteConn.RegisterFunc("CONCAT", concat, true)
-			if err != nil {
-				return fmt.Errorf("error al registrar la función CONCAT: %w", err)
-			}
-		} else {
-			return fmt.Errorf("No se pudo obtener la conexión subyacente de SQLite")
-		}
-		return nil
-	})
-	if err != nil {
-		log.Fatal("Error al registrar la función CONCAT:", err)
-	}
-	_ = sqliteConn
 	defer models.CloseConn(conn)
 	err = models.LoadTestSqlData(db, ctx, conn)
 	if err != nil {
