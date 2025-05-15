@@ -25,15 +25,16 @@ import (
 	"os"
 	"strings"
 
-	"github.com/golobby/config/v3"
-	"github.com/golobby/config/v3/pkg/feeder"
 	_ "github.com/lib/pq"
-	"github.com/scanoss/go-grpc-helper/pkg/files"
 	gd "github.com/scanoss/go-grpc-helper/pkg/grpc/database"
 	gs "github.com/scanoss/go-grpc-helper/pkg/grpc/server"
 	zlog "github.com/scanoss/zap-logging-helper/pkg/logger"
-
+	_ "modernc.org/sqlite"
 	myconfig "scanoss.com/provenance/pkg/config"
+
+	"github.com/golobby/config/v3"
+	"github.com/golobby/config/v3/pkg/feeder"
+	"github.com/scanoss/go-grpc-helper/pkg/files"
 
 	"scanoss.com/provenance/pkg/protocol/grpc"
 	"scanoss.com/provenance/pkg/protocol/rest"

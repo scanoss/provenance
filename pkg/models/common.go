@@ -22,11 +22,10 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"log"
+	_ "modernc.org/sqlite"
+	zlog "scanoss.com/provenance/pkg/logger"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/mattn/go-sqlite3"
-	zlog "scanoss.com/provenance/pkg/logger"
 )
 
 // loadSqlData Load the specified SQL files into the supplied DB
@@ -64,41 +63,6 @@ func loadTestSqlDataFiles(db *sqlx.DB, ctx context.Context, conn *sqlx.Conn, fil
 	}
 
 	return nil
-}
-
-func Concat(args ...interface{}) (string, error) {
-	var result string
-	for _, arg := range args {
-		if arg != nil {
-			result += fmt.Sprint(arg)
-		}
-	}
-	return result, nil
-}
-func RegisterConcat(db *sqlx.DB, ctx context.Context) {
-	conn, err := db.Connx(ctx) // Get a connection from the pool
-	if err != nil {
-		log.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-	}
-
-	sqliteConn := conn.Raw(func(driverConn interface{}) error {
-		if sqliteConn, ok := driverConn.(*sqlite3.SQLiteConn); ok {
-			// Register CONCAT function
-			err := sqliteConn.RegisterFunc("CONCAT", Concat, true)
-			if err != nil {
-				return fmt.Errorf("error al registrar la función CONCAT: %w", err)
-			}
-		} else {
-			return fmt.Errorf("Could not connect to SQLite")
-		}
-		return nil
-	})
-	if sqliteConn != nil {
-		log.Fatal("Error al registrar la función CONCAT:", err)
-	}
-	_ = sqliteConn
-	CloseConn(conn)
-
 }
 
 // CloseDB closes the specified DB and logs any errors
