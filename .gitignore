@@ -26,3 +26,6 @@ tmp/
 .DS_Store
 
 scripts/scanoss-*-api
+
+coverage.out
+coverage.html

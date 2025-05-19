@@ -71,7 +71,7 @@ func (p provenanceServer) GetComponentContributors(ctx context.Context, request 
 	}
 	defer closeDbConnection(conn)
 	// Search the KB for information about each Provenance
-	provUc := usecase.NewProvenance(ctx, conn)
+	provUc := usecase.NewProvenance(ctx, conn, s)
 	dtoProv, summary, err := provUc.GetProvenance(dtoRequest)
 
 	if err != nil {
@@ -92,11 +92,6 @@ func (p provenanceServer) GetComponentContributors(ctx context.Context, request 
 	messages := []string{}
 	if len(summary.PurlsFailedToParse) > 0 {
 		messages = append(messages, fmt.Sprintf("Failed to parse: %s", strings.Join(summary.PurlsFailedToParse, ", ")))
-		statusResp.Status = common.StatusCode_SUCCEEDED_WITH_WARNINGS
-	}
-
-	if len(summary.PurlsNotFound) > 0 {
-		messages = append(messages, fmt.Sprintf("Can't find purl(s): %s", strings.Join(summary.PurlsNotFound, ", ")))
 		statusResp.Status = common.StatusCode_SUCCEEDED_WITH_WARNINGS
 	}
 	if len(summary.PurlsWOInfo) > 0 {
@@ -159,15 +154,6 @@ func (p provenanceServer) GetComponentOrigin(ctx context.Context, request *commo
 	messages := []string{}
 	if len(summary.PurlsFailedToParse) > 0 {
 		messages = append(messages, fmt.Sprintf("Failed to parse: %s", strings.Join(summary.PurlsFailedToParse, ", ")))
-		statusResp.Status = common.StatusCode_SUCCEEDED_WITH_WARNINGS
-	}
-
-	if len(summary.PurlsNotFound) > 0 {
-		messages = append(messages, fmt.Sprintf("Can't find purl(s): %s", strings.Join(summary.PurlsNotFound, ", ")))
-		statusResp.Status = common.StatusCode_SUCCEEDED_WITH_WARNINGS
-	}
-	if len(summary.PurlsWOInfo) > 0 {
-		messages = append(messages, fmt.Sprintf("Can't find information for: %s", strings.Join(summary.PurlsWOInfo, ", ")))
 		statusResp.Status = common.StatusCode_SUCCEEDED_WITH_WARNINGS
 	}
 	if len(summary.PurlsTooMuchData) > 0 {

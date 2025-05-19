@@ -41,7 +41,6 @@ func TestProvenanceUseCase(t *testing.T) {
 	ctx := context.Background()
 	ctx = ctxzap.ToContext(ctx, zlog.L)
 	s := ctxzap.Extract(ctx).Sugar()
-	_ = s
 	db, err := sqlx.Connect("sqlite", ":memory:")
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -70,7 +69,7 @@ func TestProvenanceUseCase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to load Config: %v", err)
 	}
-	provUc := NewProvenance(ctx, conn)
+	provUc := NewProvenance(ctx, conn, s)
 
 	requestDto, err := dtos.ParseProvenanceInput(s, []byte(provRequest))
 	if err != nil {
@@ -90,7 +89,6 @@ func TestProvenanceUseCase(t *testing.T) {
 	   		    "purls": [
 	   		        {
 	   		          "purl": "pkg:npm/"
-
 	   		        }
 	   		  ]
 	   		}
@@ -105,6 +103,13 @@ func TestProvenanceUseCase(t *testing.T) {
 	countries, _, err = provUc.GetProvenance(requestDto)
 
 	if err == nil && len(countries.Provenance) > 0 {
+		t.Fatalf("did not get an expected error: %v", countries)
+	}
+
+	emptyReq, err := dtos.ParseProvenanceInput(s, []byte(`{ "purls": [] }`))
+	fmt.Printf("requestDto: %+v\n", emptyReq)
+	countries, _, err = provUc.GetProvenance(emptyReq)
+	if err == nil {
 		t.Fatalf("did not get an expected error: %v", countries)
 	}
 

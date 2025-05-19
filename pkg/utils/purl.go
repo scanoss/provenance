@@ -23,12 +23,10 @@ import (
 	"strings"
 
 	"github.com/package-url/packageurl-go"
-	zlog "scanoss.com/provenance/pkg/logger"
 )
 
 var pkgRegex = regexp.MustCompile(`^pkg:(?P<type>\w+)/(?P<name>.+)$`) // regex to parse purl name from purl string
 var typeRegex = regexp.MustCompile(`^(npm|nuget)$`)                   // regex to parse purl types that should not be lower cased
-var vRegex = regexp.MustCompile(`^(=|==|)(?P<name>\w+\S+)$`)          // regex to parse purl name from purl string
 
 // PurlFromString takes an input Purl string and returns a decomposed structure of all the elements
 func PurlFromString(purlString string) (packageurl.PackageURL, error) {
@@ -76,19 +74,6 @@ func ConvertPurlString(purlString string) string {
 		return s
 	}
 	return purlString
-}
-
-// GetVersionFromReq parses a requirement string looking for an exact version specifier
-func GetVersionFromReq(purlReq string) string {
-	matches := vRegex.FindStringSubmatch(purlReq)
-	if len(matches) > 0 {
-		ni := vRegex.SubexpIndex("name")
-		if ni >= 0 {
-			zlog.S.Debugf("Changing requirement %v to Version %v", purlReq, matches[ni])
-			return matches[ni]
-		}
-	}
-	return ""
 }
 
 // ProjectUrl returns a browsable URL for the given purl type and name
