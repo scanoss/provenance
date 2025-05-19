@@ -29,3 +29,5 @@ scripts/scanoss-*-api
 
 coverage.out
 coverage.html
+
+.env
