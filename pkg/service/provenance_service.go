@@ -89,7 +89,7 @@ func (p provenanceServer) GetComponentContributors(ctx context.Context, request 
 	// Set the status and respond with the data
 
 	statusResp := common.StatusResponse{Status: common.StatusCode_SUCCESS, Message: "Success"}
-	messages := []string{}
+	var messages []string
 	if len(summary.PurlsFailedToParse) > 0 {
 		messages = append(messages, fmt.Sprintf("Failed to parse: %s", strings.Join(summary.PurlsFailedToParse, ", ")))
 		statusResp.Status = common.StatusCode_SUCCEEDED_WITH_WARNINGS
@@ -151,7 +151,7 @@ func (p provenanceServer) GetComponentOrigin(ctx context.Context, request *commo
 	// Set the status and respond with the data
 
 	statusResp := common.StatusResponse{Status: common.StatusCode_SUCCESS, Message: "Success"}
-	messages := []string{}
+	var messages []string
 	if len(summary.PurlsFailedToParse) > 0 {
 		messages = append(messages, fmt.Sprintf("Failed to parse: %s", strings.Join(summary.PurlsFailedToParse, ", ")))
 		statusResp.Status = common.StatusCode_SUCCEEDED_WITH_WARNINGS

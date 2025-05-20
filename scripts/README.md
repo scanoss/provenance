@@ -16,7 +16,7 @@ Logs are written by default to `/var/log/scanoss/geoprovenance/scanoss-geoproven
 Configuration is written by default to: `/usr/local/etc/scanoss/geoprovenance`.
 
 ## Installation
-Running the [env-setup.sh](env-setup.sh) on the target server, takes care of installation. Simply run:
+Running the [env-setup.sh](env-setup.sh) on the target server takes care of the installation. Simply run:
 ```shell
 ./env-setup.sh
 ```
@@ -33,7 +33,7 @@ Create a copy of the [scanoss-geoprovenance-api.service](scanoss-geoprovenance-a
 cp scanoss-geoprovenance-api.service scanoss-geoprovenance-api-<env>.service
 ```
 
-Where `env` is the name of this edition of the service (i.e. dev).
+Where `env` is the name of this edition of the service (i.e., dev).
 
 The `app-config-prod.json` file will also need to be copied:
 ```shell

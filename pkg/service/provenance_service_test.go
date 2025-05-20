@@ -112,9 +112,6 @@ func TestCProvenanceServer_GetComponentContributors(t *testing.T) {
 	}
 
 	s := NewProvenanceServer(db, myConfig)
-	if err != nil {
-		t.Fatalf("an error '%s' was not expected when loading test data", err)
-	}
 
 	tests := []struct {
 		name             string
@@ -230,7 +227,7 @@ func TestCProvenanceServer_GetComponentContributors(t *testing.T) {
 		})
 	}
 
-	request := common.PurlRequest{Purls: []*common.PurlRequest_Purls{&common.PurlRequest_Purls{Purl: "pkg:github/scanoss/engine"}, &common.PurlRequest_Purls{Purl: "pkg:github/torvalds/uemacs"}}}
+	request := common.PurlRequest{Purls: []*common.PurlRequest_Purls{{Purl: "pkg:github/scanoss/engine"}, {Purl: "pkg:github/torvalds/uemacs"}}}
 
 	got, errReq := s.GetComponentContributors(ctx, &request)
 	if errReq != nil {

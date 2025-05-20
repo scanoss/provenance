@@ -43,7 +43,7 @@ func TestContributorOrigin(t *testing.T) {
 	//CloseConn(conn)
 	cProvModel := NewProvenanceModel(ctx, conn)
 	purlsNames := []string{"torvalds/uemacs", "scanoss/engine"}
-	list, errq := cProvModel.GetTimeZoneOriginByPurlName(purlsNames[1], "")
+	list, errq := cProvModel.GetTimeZoneOriginByPurlName(purlsNames[1])
 	if errq != nil {
 		t.Logf("unexpected error on model request  %+v\n", errq)
 	} else {

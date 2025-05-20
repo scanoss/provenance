@@ -46,7 +46,7 @@ import (
 
 var version string
 
-// getConfig checks command line args for option to feed into the config parser.
+// getConfig checks command line args for an option to feed into the config parser.
 func getConfig() (*myconfig.ServerConfig, error) {
 	var jsonConfig, envConfig string
 	flag.StringVar(&jsonConfig, "json-config", "", "Application JSON config")
@@ -101,7 +101,7 @@ func RunServer() error {
 	}
 
 	zlog.S.Infof("Starting SCANOSS Provenance Service: %v", strings.TrimSpace(version))
-	// Setup database connection pool
+	// Set up the database connection pool
 	db, err := gd.OpenDBConnection(cfg.Database.Dsn, cfg.Database.Driver, cfg.Database.User, cfg.Database.Passwd,
 		cfg.Database.Host, cfg.Database.Schema, cfg.Database.SslMode)
 	if err != nil {

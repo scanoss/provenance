@@ -70,7 +70,7 @@ type ServerConfig struct {
 	}
 }
 
-// NewServerConfig loads all config options and return a struct for use
+// NewServerConfig loads all config options and returns a struct for use
 func NewServerConfig(feeders []config.Feeder) (*ServerConfig, error) {
 	cfg := ServerConfig{}
 	setServerConfigDefaults(&cfg)

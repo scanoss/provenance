@@ -40,7 +40,7 @@ func PurlFromString(purlString string) (packageurl.PackageURL, error) {
 	return purl, nil
 }
 
-// PurlNameFromString take an input Purl string and returns the Purl Name only
+// PurlNameFromString take an input Purl string and return the Purl Name only
 func PurlNameFromString(purlString string) (string, error) {
 	if len(purlString) == 0 {
 		return "", fmt.Errorf("no purl string supplied to parse")

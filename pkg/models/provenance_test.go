@@ -59,7 +59,7 @@ func TestContributorProvenance(t *testing.T) {
 	//CloseConn(conn)
 	cProvModel := NewProvenanceModel(ctx, conn)
 	purlsNames := []string{"torvalds/uemacs", "scanoss/engine"}
-	list, errq := cProvModel.GetProvenanceByPurlNames(purlsNames, "")
+	list, errq := cProvModel.GetProvenanceByPurlNames(purlsNames)
 	if errq != nil {
 		t.Logf("unexpected error on model request  %+v\n", errq)
 	} else {
