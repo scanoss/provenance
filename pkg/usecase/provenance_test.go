@@ -107,6 +107,9 @@ func TestProvenanceUseCase(t *testing.T) {
 	}
 
 	emptyReq, err := dtos.ParseProvenanceInput(s, []byte(`{ "purls": [] }`))
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when parsing input json", err)
+	}
 	fmt.Printf("requestDto: %+v\n", emptyReq)
 	countries, _, err = provUc.GetProvenance(emptyReq)
 	if err == nil {
